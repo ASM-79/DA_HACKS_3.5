@@ -1,0 +1,457 @@
+/* === General Reset & Base === */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background-color: #f6f9fc;
+  color: #1f2937;
+  overflow: hidden;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* === Header === */
+.header {
+  background-color: #1e3a8a;
+  color: rgb(7, 142, 232);
+  padding: 0.75rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;  
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  min-height: 60px; /* Fixed header height */
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo {
+  height: 60px; /* Increased logo size */
+  width: auto;
+  object-fit: contain;
+  filter: brightness(0) invert(1); /* Makes the logo white */
+  transition: transform 0.2s ease;
+}
+
+.logo:hover {
+  transform: scale(1.05);
+}
+
+.header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1;
+}
+
+.user-profile {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid white;
+  background: #3b82f6;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.user-profile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* === Main Content Layout === */
+.main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* === Sidebar === */
+.sidebar-left {
+  width: 280px;
+  background-color: #ffffff;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-content {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.sidebar-left h2 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: #1e3a8a;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Course Filters */
+.course-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+
+.filter-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  color: #4b5563;
+}
+
+.filter-btn:hover {
+  background-color: #f3f4f6;
+}
+
+.filter-btn.active {
+  background-color: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.filter-btn.active:hover {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+/* Course List */
+.course-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0.5rem 0;
+  flex: 1;
+  min-height: 200px;
+}
+
+.course-card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  cursor: move;
+  transition: all 0.2s ease;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.course-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.course-card.dragging {
+  opacity: 0.5;
+  background-color: #f8fafc;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.course-card .tag {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 1rem;
+  background-color: #e0f2fe;
+  color: #0369a1;
+  margin-left: 0.5rem;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+/* Tools */
+.tools {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.tool-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.4rem 0;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s ease;
+}
+
+.tool-item:hover {
+  background-color: #f3f4f6;
+}
+
+.export-btn {
+  margin-top: 0.5rem;
+  padding: 0.6rem;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.export-btn:hover {
+  background-color: #1d4ed8;
+}
+
+/* Calendar Container */
+.calendar-container {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background-color: #f1f5f9;
+}
+
+.calendar-grid {
+  flex: 1;
+  overflow-x: auto;
+  padding: 1.5rem;
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.calendar-grid::-webkit-scrollbar {
+  height: 8px;
+}
+
+.calendar-grid::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 4px;
+}
+
+.calendar-grid::-webkit-scrollbar-track {
+  background-color: #f1f5f9;
+}
+
+/* Hide scrollbar for Firefox */
+.calendar-grid {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.semesters-row {
+  display: flex;
+  gap: 1.25rem;
+  min-width: fit-content;
+  height: 100%;
+}
+
+.semester-column {
+  flex: 0 0 280px;
+  background: white;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  position: relative;
+  min-height: 400px;
+}
+
+.semester-column h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #1e3a8a;
+  font-size: 1.1rem;
+}
+
+.course-drop-zone {
+  min-height: 100px;
+  padding: 10px;
+  border-radius: 8px;
+  background-color: #f8fafc;
+  transition: all 0.2s ease;
+  border: 2px dashed #e2e8f0;
+  margin-bottom: 15px;
+}
+
+.course-drop-zone.drag-over {
+  background-color: rgba(59, 130, 246, 0.1);
+  border-color: #3b82f6;
+  border-style: solid;
+}
+
+/* AI Advisor */
+.ai-advisor {
+  width: 320px;
+  background-color: #ffffff;
+  border-left: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.05);
+  z-index: 10;
+  height: 100%;
+}
+
+.ai-header {
+  padding: 1.25rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ai-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #1e3a8a;
+}
+
+.ai-icon {
+  width: 24px;
+  height: 24px;
+  background-color: #e0f2fe;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0369a1;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.ai-icon img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.ai-message {
+  flex: 1;
+  padding: 1.25rem;
+  overflow-y: auto;
+  line-height: 1.5;
+  font-size: 0.95rem;
+  color: #374151;
+}
+
+.ai-message p {
+  margin: 0 0 1rem 0;
+}
+
+.ai-message p:last-child {
+  margin-bottom: 0;
+}
+
+.ai-chatbox {
+  padding: 1.25rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  gap: 0.75rem;
+  background-color: #f9fafb;
+}
+
+.ai-chatbox input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.ai-chatbox input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.ai-chatbox button {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 0.5rem;
+  background-color: #2563eb;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.ai-chatbox button:hover {
+  background-color: #1d4ed8;
+}
+
+.ai-chatbox button:active {
+  transform: scale(0.98);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .course-card {
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
+  
+  .tag {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+  }
+  
+  .semester-column {
+    padding: 10px;
+  }
+  
+  .semester-column h3 {
+    font-size: 1rem;
+    margin-bottom: 10px;
+  }
+}
