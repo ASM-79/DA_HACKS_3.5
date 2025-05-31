@@ -266,11 +266,11 @@ function displayPlan(plan) {
 async function main() {
   // User constraints with EXPLICIT values
   const constraints = {
-    startTerm: "Fall 2023",
+    startTerm: "Fall 2024",
     maxUnitsPerTerm: 20, 
     minUnitsPerTerm: 10,
     maxTerms: 8,
-    avoidTerms: ["Summer 2023"],
+    avoidTerms: ["Summer 2024"],
     avoidCourses: [],
     balanceWorkload: false,
     finishFastest: true 

@@ -113,6 +113,92 @@ function setupCardDragEvents(card) {
   });
 }
 
+// Demo course data - plans for different majors
+const demoPlans = {
+  "berkeley_eecs": {
+    "fall-24": [
+      { code: "MATH 1A", name: "Calculus I", units: 5, tags: ["Major", "GE"] },
+      { code: "PHYS 4A", name: "Physics for Scientists and Engineers I", units: 5, tags: ["Major", "GE"] },
+      { code: "EWRT 1A", name: "Composition and Reading", units: 4.5, tags: ["GE", "IGETC"] }
+    ],
+    "winter-25": [
+      { code: "MATH 1B", name: "Calculus II", units: 5, tags: ["Major", "GE"] },
+      { code: "PHYS 4B", name: "Physics for Scientists and Engineers II", units: 5, tags: ["Major", "GE"] },
+      { code: "EWRT 1B", name: "Critical Reading, Writing and Thinking", units: 4.5, tags: ["GE", "IGETC"] }
+    ],
+    "spring-25": [
+      { code: "MATH 1C", name: "Calculus III", units: 5, tags: ["Major", "GE"] },
+      { code: "PHYS 4C", name: "Physics for Scientists and Engineers III", units: 5, tags: ["Major", "GE"] },
+      { code: "CIS 22A", name: "Python Programming", units: 4.5, tags: ["Major"] }
+    ],
+    "fall-25": [
+      { code: "MATH 1D", name: "Calculus IV", units: 5, tags: ["Major", "GE"] },
+      { code: "PHYS 4D", name: "Physics for Scientists and Engineers IV", units: 5, tags: ["Major", "GE"] },
+      { code: "CIS 22B", name: "Intermediate Programming Methodologies in C++", units: 4.5, tags: ["Major"] }
+    ],
+    "winter-26": [
+      { code: "MATH 2A", name: "Differential Equations", units: 5, tags: ["Major", "GE"] },
+      { code: "CIS 22C", name: "Data Abstraction and Structures", units: 4.5, tags: ["Major"] },
+      { code: "ENGR 37", name: "Introduction to Circuit Analysis", units: 5, tags: ["Major"] }
+    ],
+    "spring-26": [
+      { code: "MATH 2B", name: "Linear Algebra", units: 5, tags: ["Major", "GE"] },
+      { code: "CIS 35A", name: "Java Programming", units: 4.5, tags: ["Major"] }
+    ]
+  },
+  "ucla_cs": {
+    "fall-24": [
+      { code: "MATH 1A", name: "Calculus I", units: 5, tags: ["Major", "GE"] },
+      { code: "PHYS 4A", name: "Physics for Scientists and Engineers I", units: 5, tags: ["Major", "GE"] },
+      { code: "EWRT 1A", name: "Composition and Reading", units: 4.5, tags: ["GE", "IGETC"] }
+    ],
+    "winter-25": [
+      { code: "MATH 1B", name: "Calculus II", units: 5, tags: ["Major", "GE"] },
+      { code: "PHYS 4B", name: "Physics for Scientists and Engineers II", units: 5, tags: ["Major", "GE"] },
+      { code: "CIS 22A", name: "Python Programming", units: 4.5, tags: ["Major"] }
+    ],
+    "spring-25": [
+      { code: "MATH 1C", name: "Calculus III", units: 5, tags: ["Major", "GE"] },
+      { code: "CIS 22B", name: "Intermediate Programming Methodologies in C++", units: 4.5, tags: ["Major"] },
+      { code: "EWRT 1B", name: "Critical Reading, Writing and Thinking", units: 4.5, tags: ["GE", "IGETC"] }
+    ],
+    "fall-25": [
+      { code: "MATH 1D", name: "Calculus IV", units: 5, tags: ["Major", "GE"] },
+      { code: "CIS 22C", name: "Data Abstraction and Structures", units: 4.5, tags: ["Major"] }
+    ]
+  },
+  "ucsd_cognitive": {
+    "fall-24": [
+      { code: "PSYC 1", name: "General Psychology", units: 4, tags: ["Major", "GE"] },
+      { code: "MATH 1A", name: "Calculus I", units: 5, tags: ["Major", "GE"] },
+      { code: "EWRT 1A", name: "Composition and Reading", units: 4.5, tags: ["GE", "IGETC"] }
+    ],
+    "winter-25": [
+      { code: "PSYC 2", name: "Research Methods", units: 4, tags: ["Major"] },
+      { code: "MATH 1B", name: "Calculus II", units: 5, tags: ["Major", "GE"] },
+      { code: "EWRT 1B", name: "Critical Reading, Writing and Thinking", units: 4.5, tags: ["GE", "IGETC"] }
+    ],
+    "spring-25": [
+      { code: "PSYC 3", name: "Intro to Cognitive Psychology", units: 4, tags: ["Major"] },
+      { code: "CIS 22A", name: "Python Programming", units: 4.5, tags: ["Major"] },
+      { code: "BIOL 6A", name: "Cell and Molecular Biology", units: 5, tags: ["Major", "GE"] }
+    ],
+    "fall-25": [
+      { code: "PSYC 5", name: "Intro to Social Psychology", units: 4, tags: ["Major"] },
+      { code: "BIOL 6B", name: "Cell and Molecular Biology Lab", units: 5, tags: ["Major", "GE"] },
+      { code: "PHIL 7", name: "Intro to Philosophy of Mind", units: 4, tags: ["Major", "GE"] }
+    ]
+  }
+};
+
+// Current state
+let currentPlan = null;
+let currentTarget = { university: "berkeley", major: "eecs" };
+let currentConstraints = {
+  avoidSummer: false,
+  maxUnits: 15
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   const courseList = document.getElementById("courseList");
   const semesterColumns = document.querySelectorAll(".semester-column");
@@ -131,9 +217,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // === Semester Column Drop Targets ===
   semesterColumns.forEach(column => {
-    column.addEventListener("dragover", handleDragOver);
-    column.addEventListener("dragleave", handleDragLeave);
-    column.addEventListener("drop", handleDrop);
+    const dropZone = column.querySelector('.course-drop-zone');
+    if (dropZone) {
+      dropZone.addEventListener("dragover", handleDragOver);
+      dropZone.addEventListener("dragleave", handleDragLeave);
+      dropZone.addEventListener("drop", handleDrop);
+    }
   });
 
   // Update course cards for filtering
@@ -180,4 +269,318 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.click(); // Trigger the click to apply the filter
     }
   }
+
+  // AI Advisor Interaction
+  const aiInput = document.getElementById('aiInput');
+  const aiSend = document.getElementById('aiSend');
+  const aiMessage = document.getElementById('aiMessage');
+  
+  // Function to add a message to the AI chat
+  function addMessage(message, isUser = false) {
+    const messageElem = document.createElement('p');
+    messageElem.textContent = message;
+    if (isUser) {
+      messageElem.classList.add('user-message');
+    }
+    aiMessage.appendChild(messageElem);
+    aiMessage.scrollTop = aiMessage.scrollHeight;
+  }
+  
+  // Function to apply a plan to the UI
+  function applyPlanToUI(planKey) {
+    // Get the plan data
+    const plan = demoPlans[planKey];
+    if (!plan) {
+      console.error(`Plan not found for key: ${planKey}`);
+      addMessage("Error: Could not generate a plan. Please try again.");
+      return;
+    }
+    
+    currentPlan = planKey;
+    
+    // Clear existing courses from all semester columns
+    document.querySelectorAll('.course-drop-zone').forEach(zone => {
+      zone.innerHTML = '';
+    });
+    
+    // Add courses to each semester column
+    Object.entries(plan).forEach(([termId, courses]) => {
+      // Skip summer terms if avoiding summer
+      if (currentConstraints.avoidSummer && termId.includes('summer')) {
+        return;
+      }
+      
+      const column = document.getElementById(termId);
+      if (!column) {
+        console.warn(`Term column ${termId} not found`);
+        return;
+      }
+      
+      const dropZone = column.querySelector('.course-drop-zone');
+      if (!dropZone) {
+        console.warn(`Drop zone in ${termId} not found`);
+        return;
+      }
+      
+      // Limit courses to respect max units
+      let termUnits = 0;
+      const coursesToAdd = [];
+      
+      for (const course of courses) {
+        if (termUnits + course.units <= currentConstraints.maxUnits) {
+          coursesToAdd.push(course);
+          termUnits += course.units;
+        } else {
+          // Find the next non-summer term to place this course
+          const allTermIds = Object.keys(plan);
+          let nextTermIndex = allTermIds.indexOf(termId) + 1;
+          
+          while (nextTermIndex < allTermIds.length) {
+            const nextTermId = allTermIds[nextTermIndex];
+            
+            // Skip summer terms if avoiding summer
+            if (currentConstraints.avoidSummer && nextTermId.includes('summer')) {
+              nextTermIndex++;
+              continue;
+            }
+            
+            // Add to this term
+            const nextColumn = document.getElementById(nextTermId);
+            if (nextColumn) {
+              const nextDropZone = nextColumn.querySelector('.course-drop-zone');
+              if (nextDropZone) {
+                // Create a card for this term
+                createCourseCard(course, nextDropZone);
+                break;
+              }
+            }
+            
+            nextTermIndex++;
+          }
+        }
+      }
+      
+      // Add the approved courses to this term
+      coursesToAdd.forEach(course => {
+        createCourseCard(course, dropZone);
+      });
+    });
+    
+    // Update the success message
+    addMessage("✅ Plan generated successfully! You can now drag and drop courses to make adjustments.");
+  }
+  
+  // Helper to create a course card
+  function createCourseCard(course, dropZone) {
+    const courseCard = document.createElement('div');
+    courseCard.className = 'course-card';
+    courseCard.setAttribute('draggable', 'true');
+    courseCard.setAttribute('data-tags', course.tags.join(' '));
+    
+    // Create course card HTML
+    let cardHTML = `${course.code}`;
+    
+    // Add units if present
+    if (course.units) {
+      cardHTML += ` <span class="units">(${course.units})</span>`;
+    }
+    
+    // Add tags
+    cardHTML += course.tags.map(tag => `<span class="tag">${tag}</span>`).join('');
+    
+    courseCard.innerHTML = cardHTML;
+    
+    // Add the course card to the drop zone
+    dropZone.appendChild(courseCard);
+    
+    // Setup drag events for the new card
+    setupCardDragEvents(courseCard);
+  }
+  
+  // Process user message and generate a response
+  function processUserMessage(message) {
+    message = message.toLowerCase().trim();
+    
+    // Check for plan command: "plan [university] [major]"
+    if (message.startsWith('plan')) {
+      const parts = message.split(' ');
+      if (parts.length >= 3) {
+        const university = parts[1];
+        const major = parts[2];
+        
+        // Map to known plans
+        let planKey = null;
+        
+        if (university === 'berkeley' && (major === 'eecs' || major === 'cs')) {
+          planKey = 'berkeley_eecs';
+          currentTarget.university = 'berkeley';
+          currentTarget.major = 'eecs';
+        } else if (university === 'ucla' && major === 'cs') {
+          planKey = 'ucla_cs';
+          currentTarget.university = 'ucla';
+          currentTarget.major = 'cs';
+        } else if ((university === 'ucsd' && major === 'cognitive') || 
+                  (university === 'ucsd' && major === 'cogsci')) {
+          planKey = 'ucsd_cognitive';
+          currentTarget.university = 'ucsd';
+          currentTarget.major = 'cognitive';
+        }
+        
+        if (planKey) {
+          addMessage(`Generating your optimized transfer plan for ${university.toUpperCase()} ${major.toUpperCase()}...`);
+          
+          // Use setTimeout to simulate processing time
+          setTimeout(() => {
+            applyPlanToUI(planKey);
+          }, 1000);
+          
+          return;
+        } else {
+          return addMessage(`Sorry, I don't have a plan for ${university} ${major} yet. Try "plan berkeley eecs", "plan ucla cs", or "plan ucsd cognitive".`);
+        }
+      } else {
+        return addMessage("Please specify a university and major, for example: plan berkeley eecs");
+      }
+    }
+    
+    // Check for avoid command: "avoid [term]"
+    if (message.startsWith('avoid')) {
+      if (message.includes('summer')) {
+        currentConstraints.avoidSummer = true;
+        addMessage("I'll avoid scheduling classes in summer terms.");
+        
+        // Regenerate the plan if we have one
+        if (currentPlan) {
+          setTimeout(() => {
+            applyPlanToUI(currentPlan);
+          }, 500);
+        }
+        
+        return;
+      } else {
+        return addMessage("I can help you avoid specific terms. Try 'avoid summer' to skip summer terms.");
+      }
+    }
+    
+    // Check for limit command: "limit [units]"
+    if (message.startsWith('limit')) {
+      const parts = message.split(' ');
+      if (parts.length >= 2 && !isNaN(parts[1])) {
+        const unitLimit = parseInt(parts[1]);
+        
+        if (unitLimit >= 8 && unitLimit <= 25) {
+          currentConstraints.maxUnits = unitLimit;
+          addMessage(`Setting your unit limit per term to ${unitLimit}.`);
+          
+          // Regenerate the plan if we have one
+          if (currentPlan) {
+            setTimeout(() => {
+              applyPlanToUI(currentPlan);
+            }, 500);
+          }
+          
+          return;
+        }
+      }
+      
+      return addMessage("Please specify a reasonable unit limit between 8 and 25, for example: limit 18");
+    }
+    
+    // Check for optimize command
+    if (message === 'optimize') {
+      if (!currentPlan) {
+        return addMessage("Please create a plan first using 'plan [university] [major]'");
+      }
+      
+      addMessage("Optimizing your current plan for better balance...");
+      
+      // Just reapply the current plan - in a real implementation this would do more
+      setTimeout(() => {
+        applyPlanToUI(currentPlan);
+      }, 800);
+      
+      return;
+    }
+    
+    // Check for help command
+    if (message === 'help') {
+      return addMessage(
+        "Available commands:\n" +
+        "- plan [university] [major] - Create a transfer plan\n" +
+        "- avoid summer - Avoid scheduling classes in summer\n" +
+        "- limit [units] - Set maximum units per term\n" +
+        "- optimize - Balance workload across terms\n\n" +
+        "Example: plan berkeley eecs"
+      );
+    }
+    
+    // Default response for unknown commands
+    return addMessage("I don't understand that command. Type 'help' to see available commands.");
+  }
+  
+  // Handle sending a message to the AI
+  function handleSendMessage() {
+    const message = aiInput.value.trim();
+    if (!message) return;
+    
+    // Add the user message to the chat
+    addMessage(message, true);
+    
+    // Clear the input
+    aiInput.value = '';
+    
+    // Process the message (client-side only)
+    processUserMessage(message);
+  }
+  
+  // Event listeners for the AI chat
+  if (aiSend) {
+    aiSend.addEventListener('click', handleSendMessage);
+  }
+  
+  if (aiInput) {
+    aiInput.addEventListener('keypress', event => {
+      if (event.key === 'Enter') {
+        handleSendMessage();
+      }
+    });
+  }
+  
+  // Initial greeting from the AI
+  setTimeout(() => {
+    addMessage("Hi! I'm your AI course planning assistant. I'll help you create a transfer plan.");
+  }, 500);
+  
+  // Add sample commands to demonstrate functionality
+  setTimeout(() => {
+    addMessage("Try these commands:\n- plan berkeley eecs\n- avoid summer\n- limit 18\n- optimize");
+  }, 1000);
+  
+  // Add the demo button
+  addDemoButton();
 });
+
+// Function to initialize a demo plan
+function initializeDemoPlan() {
+  // Simulate typing and sending "plan berkeley eecs"
+  const aiInput = document.getElementById('aiInput');
+  const aiSend = document.getElementById('aiSend');
+  
+  if (aiInput && aiSend) {
+    aiInput.value = "plan berkeley eecs";
+    aiSend.click();
+  }
+}
+
+// Add a button to initialize a demo plan
+function addDemoButton() {
+  const header = document.querySelector('.header');
+  if (!header) return;
+  
+  const demoButton = document.createElement('button');
+  demoButton.textContent = "Load Demo Plan";
+  demoButton.className = "demo-button";
+  demoButton.addEventListener('click', initializeDemoPlan);
+  
+  header.appendChild(demoButton);
+}
