@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<!-- saved from url=(0067)file:///Users/harish_thany/DA%20Hacks%203.5/DA_HACKS_3.5/index.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClassPath AI</title>
+  <link rel="stylesheet" href="./ClassPath AI_files/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <img src="./ClassPath AI_files/Logo.png" alt="ClassPath AI Logo" class="logo">
+
+      </div>
+    <button class="demo-button">Load Demo Plan</button></header>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Sidebar -->
+      <aside class="sidebar-left">
+        <div class="sidebar-content">
+          <h2>Drag and Drop Courses</h2>
+          <input type="text" placeholder="Search courses..." id="searchBox" class="search-input">
+          
+          <!-- Course Filters -->
+          <div class="course-filters">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="GE">GE</button>
+            <button class="filter-btn" data-filter="Major">Major</button>
+            <button class="filter-btn" data-filter="IGETC">IGETC</button>
+          </div>
+          
+          <!-- Course List -->
+          <div id="courseList" class="course-list">
+            <div class="course-card" draggable="true" data-tags="GE Major" style="display: flex;">
+              ENGR 1A 
+              <span class="tag">Major</span>
+            </div>
+            <div class="course-card" draggable="true" data-tags="Major" style="display: flex;">
+              ENGR 1B 
+              <span class="tag">Major</span>
+            </div>
+            <div class="course-card" draggable="true" data-tags="GE Major" style="display: flex;">
+              MATH 3B 
+              <span class="tag">GE</span>
+              <span class="tag">Major</span>
+            </div>
+          </div>
+          
+          <!-- Tools -->
+          <div class="tools">
+            <label class="tool-item">
+              <input type="checkbox"> 
+              <span>Show Units</span>
+            </label>
+            <label class="tool-item">
+              <input type="checkbox"> 
+              <span>Show Warnings</span>
+            </label>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Calendar Grid -->
+      <main class="calendar-container">
+        <div class="calendar-grid">
+          <div class="semesters-row">
+            <!-- Semester Columns -->
+            <div class="semester-column" id="fall-24">
+              <h3>🍁 Fall 2024</h3>
+              <div class="course-drop-zone"><div class="course-card" draggable="true" data-tags="Major GE">PSYC 1 <span class="units">(4)</span><span class="tag">Major</span><span class="tag">GE</span></div><div class="course-card" draggable="true" data-tags="Major GE">MATH 1A <span class="units">(5)</span><span class="tag">Major</span><span class="tag">GE</span></div><div class="course-card" draggable="true" data-tags="GE IGETC">EWRT 1A <span class="units">(4.5)</span><span class="tag">GE</span><span class="tag">IGETC</span></div></div>
+            </div>
+            <div class="semester-column" id="winter-25">
+              <h3>⛄ Winter 2025</h3>
+              <div class="course-drop-zone"><div class="course-card" draggable="true" data-tags="Major">PSYC 2 <span class="units">(4)</span><span class="tag">Major</span></div><div class="course-card" draggable="true" data-tags="Major GE">MATH 1B <span class="units">(5)</span><span class="tag">Major</span><span class="tag">GE</span></div><div class="course-card" draggable="true" data-tags="GE IGETC">EWRT 1B <span class="units">(4.5)</span><span class="tag">GE</span><span class="tag">IGETC</span></div></div>
+            </div>
+            <div class="semester-column" id="spring-25">
+              <h3>🌱 Spring 2025</h3>
+              <div class="course-drop-zone"><div class="course-card" draggable="true" data-tags="Major">PSYC 3 <span class="units">(4)</span><span class="tag">Major</span></div><div class="course-card" draggable="true" data-tags="Major">CIS 22A <span class="units">(4.5)</span><span class="tag">Major</span></div><div class="course-card" draggable="true" data-tags="Major GE">BIOL 6A <span class="units">(5)</span><span class="tag">Major</span><span class="tag">GE</span></div></div>
+            </div>
+            <div class="semester-column" id="summer-25">
+              <h3>☀️ Summer 2025</h3>
+              <div class="course-drop-zone"></div>
+            </div>
+            <div class="semester-column" id="fall-25">
+              <h3>🍁 Fall 2025</h3>
+              <div class="course-drop-zone"><div class="course-card" draggable="true" data-tags="Major">PSYC 5 <span class="units">(4)</span><span class="tag">Major</span></div><div class="course-card" draggable="true" data-tags="Major GE">BIOL 6B <span class="units">(5)</span><span class="tag">Major</span><span class="tag">GE</span></div><div class="course-card" draggable="true" data-tags="Major GE">PHIL 7 <span class="units">(4)</span><span class="tag">Major</span><span class="tag">GE</span></div></div>
+            </div>
+            <div class="semester-column" id="winter-26">
+              <h3>⛄ Winter 2026</h3>
+              <div class="course-drop-zone"></div>
+            </div>
+            <div class="semester-column" id="spring-26">
+              <h3>🌱 Spring 2026</h3>
+              <div class="course-drop-zone"></div>
+            </div>
+            <div class="semester-column" id="summer-26">
+              <h3>☀️ Summer 2026</h3>
+              <div class="course-drop-zone"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- AI Advisor Panel -->
+      <aside class="ai-advisor">
+        <div class="ai-header">
+          <div class="ai-icon">
+            <img src="./ClassPath AI_files/Chatbot.png" alt="AI Advisor" onerror="this.style.display=&#39;none&#39;">
+          </div>
+          <h3>AI Advisor</h3>
+        </div>
+        <div class="ai-message" id="aiMessage">
+          <p>How can I help you with your course planning today?</p>
+        <p>Hi! I'm your AI course planning assistant. I'll help you create a transfer plan.</p><p>Try these commands:
+- plan berkeley eecs
+- avoid summer
+- limit 18
+- optimize</p><p class="user-message">plan berkeley eecs</p><p>Generating your optimized transfer plan for BERKELEY EECS...</p><p>✅ Plan generated successfully! You can now drag and drop courses to make adjustments.</p><p class="user-message">plan Berkeley Data Science</p><p>Sorry, I don't have a plan for berkeley data yet. Try "plan berkeley eecs", "plan ucla cs", or "plan ucsd cognitive".</p><p class="user-message">plan ucla cs</p><p>Generating your optimized transfer plan for UCLA CS...</p><p>✅ Plan generated successfully! You can now drag and drop courses to make adjustments.</p><p class="user-message">plan ucsd cognitive</p><p>Generating your optimized transfer plan for UCSD COGNITIVE...</p><p>✅ Plan generated successfully! You can now drag and drop courses to make adjustments.</p></div>
+        <div class="ai-chatbox">
+          <input type="text" id="aiInput" placeholder="Type a message...">
+          <button id="aiSend" aria-label="Send message">
+            <span>➤</span>
+          </button>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script src="./ClassPath AI_files/script.js"></script>
+
+
+</body></html>
