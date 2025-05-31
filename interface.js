@@ -47,41 +47,125 @@ let currentTargets = [
 // Current plan (will be filled by the algorithm)
 let currentPlan = null;
 
-// Process a user message from the chat interface
+// Process a message and run the actual planning algorithm
 async function processUserMessage(message) {
-  try {
-    // Split the message into command and arguments
-    const parts = message.trim().toLowerCase().split(' ');
-    const command = parts[0];
-    const args = parts.slice(1);
+  message = message.toLowerCase().trim();
+  
+  // Extract command and arguments
+  const parts = message.split(' ');
+  const command = parts[0];
+  
+  if (command === 'plan' || command === 'paln' || command === 'pln') {
+    let targets = [];
     
-    // Look for a matching command
-    const commandObj = CHAT_COMMANDS[command];
+    // Check if this is a combined plan (contains "and")
+    if (message.includes(' and ')) {
+      // Parse multiple university-major pairs
+      const targetPairs = message.substring(5).split(' and ');
+      
+      for (const pair of targetPairs) {
+        const pairParts = pair.trim().split(' ');
+        if (pairParts.length >= 2) {
+          const universityName = pairParts[0];
+          const majorName = pairParts[1];
+          const { universityId, majorId } = getUniversityMajorIds(universityName, majorName);
+          
+          targets.push({ universityId, majorId });
+        }
+      }
+    } 
+    // Single university-major pair
+    else if (parts.length >= 3) {
+      const universityName = parts[1];
+      const majorName = parts[2];
+      const { universityId, majorId } = getUniversityMajorIds(universityName, majorName);
+      
+      targets.push({ universityId, majorId });
+    }
+    // Shorthand for a single university
+    else if (parts.length === 2) {
+      const universityName = parts[1];
+      let majorName = "eecs"; // Default major
+      
+      if (universityName === "ucla") {
+        majorName = "cs";
+      } else if (universityName === "ucsd") {
+        majorName = "cognitive";
+      } else if (universityName === "sjsu") {
+        majorName = "software";
+      }
+      
+      const { universityId, majorId } = getUniversityMajorIds(universityName, majorName);
+      targets.push({ universityId, majorId });
+    }
     
-    if (!commandObj) {
+    if (targets.length === 0) {
       return {
-        response: "I don't understand that command. Type 'help' to see available commands.",
+        response: "Please specify a university and major, for example: plan berkeley eecs",
         plan: null
       };
     }
     
-    // Execute the command action if it exists
-    let result = null;
-    if (commandObj.action) {
-      result = await commandObj.action(args);
-    }
+    // Generate the description of what we're planning
+    const targetDescriptions = targets.map(target => {
+      const uniMap = {
+        "ucb": "UC Berkeley",
+        "ucla": "UCLA",
+        "ucsd": "UC San Diego",
+        "sjsu": "San Jose State"
+      };
+      
+      const majorMap = {
+        "ucb_eecs": "EECS",
+        "ucla_cs": "Computer Science",
+        "ucsd_cognitive_sci": "Cognitive Science",
+        "sjsu_software_eng": "Software Engineering"
+      };
+      
+      return `${uniMap[target.universityId] || target.universityId} ${majorMap[target.majorId] || target.majorId}`;
+    });
     
+    const responseText = targets.length === 1
+      ? `Generating your optimized transfer plan for ${targetDescriptions[0]}...`
+      : `Generating your combined transfer plan for ${targetDescriptions.join(' AND ')}...`;
+    
+    try {
+      // Call the real planning algorithm using the window.plannerAPI
+      const plan = await window.plannerAPI.generateCombinedPlan(targets, currentConstraints);
+      
+      return {
+        response: responseText,
+        plan: convertPlanToUI(plan)
+      };
+    } catch (error) {
+      console.error("Error generating plan:", error);
+      return {
+        response: `Error generating plan: ${error.message}`,
+        plan: null
+      };
+    }
+  }
+  
+  // Look for a matching command
+  const commandObj = CHAT_COMMANDS[command];
+  
+  if (!commandObj) {
     return {
-      response: commandObj.response,
-      plan: result
-    };
-  } catch (error) {
-    console.error("Error in processUserMessage:", error);
-    return {
-      response: "Sorry, there was an error processing your request: " + error.message,
+      response: "I don't understand that command. Type 'help' to see available commands.",
       plan: null
     };
   }
+  
+  // Execute the command action if it exists
+  let result = null;
+  if (commandObj.action) {
+    result = await commandObj.action(parts.slice(1));
+  }
+  
+  return {
+    response: commandObj.response,
+    plan: result
+  };
 }
 
 // Generate a plan based on user input
@@ -124,31 +208,52 @@ async function generatePlan(args) {
   }
 }
 
-// Convert the algorithm's plan format to a UI-friendly format
+// Expanded conversion function to handle year mapping
 function convertPlanToUI(plan) {
   if (!plan || !plan.terms) {
     console.error("Invalid plan format:", plan);
-    return {};
+    return null;
   }
   
   const uiPlan = {};
   
+  // Create a term mapping for any potential year offsets
+  const termMapping = {
+    "Fall 2024": "fall-24",
+    "Winter 2024": "winter-25", // Note the year change
+    "Spring 2024": "spring-25", // Note the year change
+    "Summer 2024": "summer-25", // Note the year change
+    "Fall 2025": "fall-25",
+    "Winter 2025": "winter-26", // Note the year change
+    "Spring 2025": "spring-26", // Note the year change
+    "Summer 2025": "summer-26"  // Note the year change
+  };
+  
   // Map each term to the UI semester columns
   plan.terms.forEach(term => {
     try {
-      // Convert term name to UI ID (e.g., "Fall 2024" -> "fall-24")
-      const termParts = term.name.split(' ');
-      const season = termParts[0].toLowerCase();
-      const year = termParts[1].slice(2); // "2024" -> "24"
-      const termId = `${season}-${year}`;
+      // Use the mapping if available
+      const termId = termMapping[term.name];
       
-      uiPlan[termId] = term.courses.map(course => ({
-        code: course.code,
-        name: course.name || "Unknown Course",
-        units: course.units || 4,
-        prerequisites: course.prerequisites || [],
-        tags: getCourseTagsFromRequirements(course.code)
-      }));
+      if (termId) {
+        if (!uiPlan[termId]) {
+          uiPlan[termId] = [];
+        }
+        
+        // Add courses to this term
+        term.courses.forEach(course => {
+          uiPlan[termId].push({
+            code: course.code,
+            name: course.name || "Unknown Course",
+            units: course.units || 4,
+            prerequisites: course.prerequisites || [],
+            additionalNotes: course.additionalNotes || "",
+            tags: getCourseTags(course)
+          });
+        });
+      } else {
+        console.warn(`Unknown term mapping for: ${term.name}`);
+      }
     } catch (error) {
       console.error("Error converting term to UI format:", error, term);
     }

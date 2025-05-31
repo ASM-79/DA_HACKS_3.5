@@ -1,88 +1,102 @@
 // Store the currently dragged item
 let draggedItem = null;
 
-// Handle drag start for course cards
+// Current state for planning
+let currentConstraints = {
+  startTerm: "Fall 2024",
+  maxUnitsPerTerm: 18, 
+  minUnitsPerTerm: 10,
+  maxTerms: 8,
+  avoidTerms: [],
+  avoidCourses: [],
+  balanceWorkload: false,
+  finishFastest: true 
+};
+
+// Function to map university/major names to IDs
+function getUniversityMajorIds(universityName, majorName) {
+  const universityMap = {
+    "berkeley": "ucb",
+    "ucb": "ucb",
+    "ucla": "ucla",
+    "ucsd": "ucsd",
+    "sjsu": "sjsu"
+  };
+  
+  const majorMap = {
+    "eecs": "ucb_eecs",
+    "cs": "ucla_cs",
+    "cognitive": "ucsd_cognitive_sci",
+    "cogsci": "ucsd_cognitive_sci",
+    "software": "sjsu_software_eng",
+    "softeng": "sjsu_software_eng"
+  };
+  
+  return {
+    universityId: universityMap[universityName.toLowerCase()] || universityName,
+    majorId: majorMap[majorName.toLowerCase()] || majorName
+  };
+}
+
+// Regular drag-and-drop handlers (keep existing code)
 function handleDragStart(e) {
-  // Store the dragged item
   draggedItem = e.target;
   e.dataTransfer.effectAllowed = 'move';
   e.dataTransfer.setData('text/html', e.target.outerHTML);
-  
-  // Add visual feedback
   e.target.classList.add('dragging');
 }
 
-// Handle drag end
 function handleDragEnd(e) {
-  // Remove visual feedback
   e.target.classList.remove('dragging');
   draggedItem = null;
 }
 
-// Handle drag over
 function handleDragOver(e) {
   e.preventDefault();
   e.dataTransfer.dropEffect = 'move';
-  
-  // Add visual feedback for drop zones
   const dropZone = e.target.closest('.course-drop-zone, #courseList');
   if (dropZone) {
     dropZone.classList.add('drag-over');
   }
 }
 
-// Handle drag leave
 function handleDragLeave(e) {
-  // Remove visual feedback when leaving a drop zone
   const dropZone = e.target.closest('.course-drop-zone, #courseList');
   if (dropZone && !dropZone.contains(e.relatedTarget)) {
     dropZone.classList.remove('drag-over');
   }
 }
 
-// Handle drop
 function handleDrop(e) {
   e.preventDefault();
-  
-  // Remove visual feedback from all drop zones
   document.querySelectorAll('.drag-over').forEach(el => {
     el.classList.remove('drag-over');
   });
   
-  // Get the drop target (either a course list or a semester column)
   const dropZone = e.target.closest('.course-drop-zone, #courseList');
   if (!dropZone) return;
   
-  // If we have a dragged item (for reordering within the same container)
   if (draggedItem) {
-    // If dropping on another course, insert before it
     if (e.target.classList.contains('course-card')) {
       e.target.parentNode.insertBefore(draggedItem, e.target);
     } else {
-      // Otherwise, append to the drop zone
       dropZone.appendChild(draggedItem);
     }
   } 
-  // If we're moving from one container to another
   else if (e.dataTransfer.getData('text/html')) {
-    // Clone the dragged item
     const data = e.dataTransfer.getData('text/html');
     const temp = document.createElement('div');
     temp.innerHTML = data;
     const newItem = temp.firstElementChild;
     
-    // Set up event listeners for the new item
     setupCardDragEvents(newItem);
     
-    // If dropping on another course, insert before it
     if (e.target.classList.contains('course-card')) {
       e.target.parentNode.insertBefore(newItem, e.target);
     } else {
-      // Otherwise, append to the drop zone
       dropZone.appendChild(newItem);
     }
     
-    // If moving from sidebar to semester or vice versa, remove the original
     const sourceList = document.querySelector('.dragging-source');
     if (sourceList && sourceList !== dropZone) {
       const original = sourceList.querySelector('.dragging');
@@ -90,18 +104,15 @@ function handleDrop(e) {
     }
   }
   
-  // Clean up
   document.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'));
   document.querySelectorAll('.dragging-source').forEach(el => el.classList.remove('dragging-source'));
 }
 
-// Set up drag events for a card
 function setupCardDragEvents(card) {
   card.setAttribute('draggable', 'true');
   card.addEventListener('dragstart', handleDragStart);
   card.addEventListener('dragend', handleDragEnd);
   
-  // Store the source container when dragging starts
   card.addEventListener('dragstart', function(e) {
     this.classList.add('dragging');
     this.closest('.course-drop-zone, #courseList')?.classList.add('dragging-source');
@@ -113,109 +124,458 @@ function setupCardDragEvents(card) {
   });
 }
 
-// Demo course data - plans for different majors
-const demoPlans = {
-  "berkeley_eecs": {
-    "fall-24": [
-      { code: "MATH 1A", name: "Calculus I", units: 5, tags: ["Major", "GE"] },
-      { code: "PHYS 4A", name: "Physics for Scientists and Engineers I", units: 5, tags: ["Major", "GE"] },
-      { code: "EWRT 1A", name: "Composition and Reading", units: 4.5, tags: ["GE", "IGETC"] }
-    ],
-    "winter-25": [
-      { code: "MATH 1B", name: "Calculus II", units: 5, tags: ["Major", "GE"] },
-      { code: "PHYS 4B", name: "Physics for Scientists and Engineers II", units: 5, tags: ["Major", "GE"] },
-      { code: "EWRT 1B", name: "Critical Reading, Writing and Thinking", units: 4.5, tags: ["GE", "IGETC"] }
-    ],
-    "spring-25": [
-      { code: "MATH 1C", name: "Calculus III", units: 5, tags: ["Major", "GE"] },
-      { code: "PHYS 4C", name: "Physics for Scientists and Engineers III", units: 5, tags: ["Major", "GE"] },
-      { code: "CIS 22A", name: "Python Programming", units: 4.5, tags: ["Major"] }
-    ],
-    "fall-25": [
-      { code: "MATH 1D", name: "Calculus IV", units: 5, tags: ["Major", "GE"] },
-      { code: "PHYS 4D", name: "Physics for Scientists and Engineers IV", units: 5, tags: ["Major", "GE"] },
-      { code: "CIS 22B", name: "Intermediate Programming Methodologies in C++", units: 4.5, tags: ["Major"] }
-    ],
-    "winter-26": [
-      { code: "MATH 2A", name: "Differential Equations", units: 5, tags: ["Major", "GE"] },
-      { code: "CIS 22C", name: "Data Abstraction and Structures", units: 4.5, tags: ["Major"] },
-      { code: "ENGR 37", name: "Introduction to Circuit Analysis", units: 5, tags: ["Major"] }
-    ],
-    "spring-26": [
-      { code: "MATH 2B", name: "Linear Algebra", units: 5, tags: ["Major", "GE"] },
-      { code: "CIS 35A", name: "Java Programming", units: 4.5, tags: ["Major"] }
-    ]
-  },
-  "ucla_cs": {
-    "fall-24": [
-      { code: "MATH 1A", name: "Calculus I", units: 5, tags: ["Major", "GE"] },
-      { code: "PHYS 4A", name: "Physics for Scientists and Engineers I", units: 5, tags: ["Major", "GE"] },
-      { code: "EWRT 1A", name: "Composition and Reading", units: 4.5, tags: ["GE", "IGETC"] }
-    ],
-    "winter-25": [
-      { code: "MATH 1B", name: "Calculus II", units: 5, tags: ["Major", "GE"] },
-      { code: "PHYS 4B", name: "Physics for Scientists and Engineers II", units: 5, tags: ["Major", "GE"] },
-      { code: "CIS 22A", name: "Python Programming", units: 4.5, tags: ["Major"] }
-    ],
-    "spring-25": [
-      { code: "MATH 1C", name: "Calculus III", units: 5, tags: ["Major", "GE"] },
-      { code: "CIS 22B", name: "Intermediate Programming Methodologies in C++", units: 4.5, tags: ["Major"] },
-      { code: "EWRT 1B", name: "Critical Reading, Writing and Thinking", units: 4.5, tags: ["GE", "IGETC"] }
-    ],
-    "fall-25": [
-      { code: "MATH 1D", name: "Calculus IV", units: 5, tags: ["Major", "GE"] },
-      { code: "CIS 22C", name: "Data Abstraction and Structures", units: 4.5, tags: ["Major"] }
-    ]
-  },
-  "ucsd_cognitive": {
-    "fall-24": [
-      { code: "PSYC 1", name: "General Psychology", units: 4, tags: ["Major", "GE"] },
-      { code: "MATH 1A", name: "Calculus I", units: 5, tags: ["Major", "GE"] },
-      { code: "EWRT 1A", name: "Composition and Reading", units: 4.5, tags: ["GE", "IGETC"] }
-    ],
-    "winter-25": [
-      { code: "PSYC 2", name: "Research Methods", units: 4, tags: ["Major"] },
-      { code: "MATH 1B", name: "Calculus II", units: 5, tags: ["Major", "GE"] },
-      { code: "EWRT 1B", name: "Critical Reading, Writing and Thinking", units: 4.5, tags: ["GE", "IGETC"] }
-    ],
-    "spring-25": [
-      { code: "PSYC 3", name: "Intro to Cognitive Psychology", units: 4, tags: ["Major"] },
-      { code: "CIS 22A", name: "Python Programming", units: 4.5, tags: ["Major"] },
-      { code: "BIOL 6A", name: "Cell and Molecular Biology", units: 5, tags: ["Major", "GE"] }
-    ],
-    "fall-25": [
-      { code: "PSYC 5", name: "Intro to Social Psychology", units: 4, tags: ["Major"] },
-      { code: "BIOL 6B", name: "Cell and Molecular Biology Lab", units: 5, tags: ["Major", "GE"] },
-      { code: "PHIL 7", name: "Intro to Philosophy of Mind", units: 4, tags: ["Major", "GE"] }
-    ]
+// Process a message and run the actual planning algorithm
+async function processUserMessage(message) {
+  message = message.toLowerCase().trim();
+  
+  // Extract command and arguments
+  const parts = message.split(' ');
+  const command = parts[0];
+  
+  if (command === 'plan' || command === 'paln' || command === 'pln') {
+    let targets = [];
+    
+    // Check if this is a combined plan (contains "and")
+    if (message.includes(' and ')) {
+      // Parse multiple university-major pairs
+      const targetPairs = message.substring(5).split(' and ');
+      
+      for (const pair of targetPairs) {
+        const pairParts = pair.trim().split(' ');
+        if (pairParts.length >= 2) {
+          const universityName = pairParts[0];
+          const majorName = pairParts[1];
+          const { universityId, majorId } = getUniversityMajorIds(universityName, majorName);
+          
+          targets.push({ universityId, majorId });
+        }
+      }
+    } 
+    // Single university-major pair
+    else if (parts.length >= 3) {
+      const universityName = parts[1];
+      const majorName = parts[2];
+      const { universityId, majorId } = getUniversityMajorIds(universityName, majorName);
+      
+      targets.push({ universityId, majorId });
+    }
+    // Shorthand for a single university
+    else if (parts.length === 2) {
+      const universityName = parts[1];
+      let majorName = "eecs"; // Default major
+      
+      if (universityName === "ucla") {
+        majorName = "cs";
+      } else if (universityName === "ucsd") {
+        majorName = "cognitive";
+      } else if (universityName === "sjsu") {
+        majorName = "software";
+      }
+      
+      const { universityId, majorId } = getUniversityMajorIds(universityName, majorName);
+      targets.push({ universityId, majorId });
+    }
+    
+    if (targets.length === 0) {
+      return {
+        response: "Please specify a university and major, for example: plan berkeley eecs",
+        plan: null
+      };
+    }
+    
+    // Generate the description of what we're planning
+    const targetDescriptions = targets.map(target => {
+      const uniMap = {
+        "ucb": "UC Berkeley",
+        "ucla": "UCLA",
+        "ucsd": "UC San Diego",
+        "sjsu": "San Jose State"
+      };
+      
+      const majorMap = {
+        "ucb_eecs": "EECS",
+        "ucla_cs": "Computer Science",
+        "ucsd_cognitive_sci": "Cognitive Science",
+        "sjsu_software_eng": "Software Engineering"
+      };
+      
+      return `${uniMap[target.universityId] || target.universityId} ${majorMap[target.majorId] || target.majorId}`;
+    });
+    
+    const responseText = targets.length === 1
+      ? `Generating your optimized transfer plan for ${targetDescriptions[0]}...`
+      : `Generating your combined transfer plan for ${targetDescriptions.join(' AND ')}...`;
+    
+    try {
+      // Call the real planning algorithm
+      const plan = await window.generateRealPlan(targets, currentConstraints);
+      
+      return {
+        response: responseText,
+        plan: convertPlanToUI(plan)
+      };
+    } catch (error) {
+      console.error("Error generating plan:", error);
+      return {
+        response: `Error generating plan: ${error.message}`,
+        plan: null
+      };
+    }
   }
-};
+  
+  // Handle avoid command
+  if (command === 'avoid' || command === 'skip') {
+    if (message.includes('summer')) {
+      // Add all summer terms to avoid list
+      currentConstraints.avoidTerms = ["Summer 2024", "Summer 2025", "Summer 2026"];
+      
+      return {
+        response: "I'll avoid scheduling classes in summer terms.",
+        action: "updateConstraints"
+      };
+    } else {
+      return {
+        response: "I can help you avoid specific terms. Try 'avoid summer' to skip summer terms.",
+        plan: null
+      };
+    }
+  }
+  
+  // Handle limit command
+  if (command === 'limit' || command === 'max' || command === 'units') {
+    const numberMatch = message.match(/\d+/);
+    if (numberMatch) {
+      const unitLimit = parseInt(numberMatch[0]);
+      
+      if (unitLimit >= 8 && unitLimit <= 25) {
+        currentConstraints.maxUnitsPerTerm = unitLimit;
+        
+        return {
+          response: `Setting your unit limit per term to ${unitLimit}.`,
+          action: "updateConstraints"
+        };
+      }
+    }
+    
+    return {
+      response: "Please specify a reasonable unit limit between 8 and 25, for example: limit 18",
+      plan: null
+    };
+  }
+  
+  // Handle optimize command
+  if (command === 'optimize' || command === 'balance' || command === 'rebalance') {
+    currentConstraints.balanceWorkload = true;
+    
+    return {
+      response: "Optimizing your current plan for better balance...",
+      action: "updateConstraints"
+    };
+  }
+  
+  // Handle help command
+  if (command === 'help' || command === '?' || command === 'commands') {
+    return {
+      response: 
+        "Available commands:\n" +
+        "- plan berkeley eecs - Create a transfer plan for one school\n" +
+        "- plan berkeley eecs and ucsd cognitive - Create a combined plan for multiple schools\n" +
+        "- avoid summer - Avoid scheduling classes in summer\n" +
+        "- limit 18 - Set maximum units per term\n" +
+        "- optimize - Balance workload across terms\n\n" +
+        "Example: plan berkeley eecs and ucsd cognitive",
+      plan: null
+    };
+  }
+  
+  // Default response
+  return {
+    response: "I don't understand that command. Type 'help' to see available commands.",
+    plan: null
+  };
+}
 
-// Current state
-let currentPlan = null;
-let currentTarget = { university: "berkeley", major: "eecs" };
-let currentConstraints = {
-  avoidSummer: false,
-  maxUnits: 15
-};
+// Initialize the backend algorithms
+async function initializeBackend() {
+  try {
+    // Create a more reliable generateRealPlan function
+    window.generateRealPlan = async function(targets, constraints) {
+      try {
+        // For debugging
+        console.log("Generating plan with targets:", targets);
+        console.log("Constraints:", constraints);
+        
+        // Use the browser-compatible planning function
+        return await window.plannerFunctions.generateCombinedPlan(targets, constraints);
+      } catch (error) {
+        console.error("Error in planning algorithm:", error);
+        throw error;
+      }
+    };
+    
+    console.log("Backend initialized successfully");
+  } catch (error) {
+    console.error("Error initializing backend:", error);
+    throw error;
+  }
+}
 
-document.addEventListener('DOMContentLoaded', () => {
+// Convert the algorithm's plan to UI format
+function convertPlanToUI(plan) {
+  if (!plan || !plan.terms) {
+    console.error("Invalid plan format:", plan);
+    return null;
+  }
+  
+  const uiPlan = {};
+  
+  // Academic quarters mapping
+  // In academic calendar, Winter/Spring/Summer of a year (e.g. 2024) are actually 
+  // displayed in the UI with the next year (e.g. winter-25)
+  const termMapping = {
+    "Fall": {yearOffset: 0},      // Fall 2024 -> fall-24
+    "Winter": {yearOffset: 1},    // Winter 2024 -> winter-25
+    "Spring": {yearOffset: 1},    // Spring 2024 -> spring-25
+    "Summer": {yearOffset: 1}     // Summer 2024 -> summer-25
+  };
+  
+  // Process each term from the algorithm output
+  plan.terms.forEach(term => {
+    try {
+      // Parse the term name (e.g., "Fall 2024")
+      const termParts = term.name.split(' ');
+      if (termParts.length !== 2) {
+        console.warn(`Unexpected term format: ${term.name}`);
+        return;
+      }
+      
+      const season = termParts[0];
+      const year = parseInt(termParts[1]);
+      
+      if (!termMapping[season]) {
+        console.warn(`Unknown season: ${season}`);
+        return;
+      }
+      
+      // Apply the mapping offset
+      const mappedYear = year + termMapping[season].yearOffset;
+      
+      // Convert season and year to UI term format (e.g., "fall-24")
+      const seasonLower = season.toLowerCase();
+      const yearSuffix = (mappedYear % 100).toString();
+      
+      const termId = `${seasonLower}-${yearSuffix}`;
+      
+      // Convert courses to UI format
+      uiPlan[termId] = term.courses.map(course => ({
+        code: course.code,
+        name: course.name || "Unknown Course",
+        units: course.units || 4,
+        prerequisites: Array.isArray(course.prerequisites) ? course.prerequisites : [],
+        additionalNotes: course.additionalNotes || "",
+        tags: getCourseTags(course)
+      }));
+      
+      console.log(`Mapped ${term.name} to ${termId} with ${term.courses.length} courses`);
+    } catch (error) {
+      console.error(`Error mapping term ${term.name}:`, error);
+    }
+  });
+  
+  return uiPlan;
+}
+// Get tags for a course
+function getCourseTags(course) {
+  const tags = ["Major"];
+  
+  // Add GE tag for certain course types
+  if (course.code.includes("MATH") || 
+      course.code.includes("EWRT") || 
+      course.code.includes("ESL") || 
+      course.code.includes("PHYS") || 
+      course.code.includes("CHEM") || 
+      course.code.includes("BIOL") ||
+      course.code.includes("PHIL")) {
+    tags.push("GE");
+  }
+  
+  // Add IGETC tag for English and some science courses
+  if (course.code.includes("EWRT") || 
+      course.code.includes("ESL") ||
+      course.code.includes("PHYS") || 
+      course.code.includes("CHEM") || 
+      course.code.includes("BIOL")) {
+    tags.push("IGETC");
+  }
+  
+  return tags;
+}
+
+// Apply a plan to the UI
+function applyPlanToUI(plan) {
+  if (!plan) {
+    console.error("No plan data received");
+    return;
+  }
+  
+  // Clear existing courses from all semester columns
+  document.querySelectorAll('.course-drop-zone').forEach(zone => {
+    zone.innerHTML = '';
+  });
+  
+  // Add courses to each semester column
+  Object.entries(plan).forEach(([termId, courses]) => {
+    const column = document.getElementById(termId);
+    if (!column) {
+      console.warn(`Term column ${termId} not found`);
+      return;
+    }
+    
+    const dropZone = column.querySelector('.course-drop-zone');
+    if (!dropZone) {
+      console.warn(`Drop zone in ${termId} not found`);
+      return;
+    }
+    
+    courses.forEach(course => {
+      const courseCard = document.createElement('div');
+      courseCard.className = 'course-card';
+      courseCard.setAttribute('draggable', 'true');
+      courseCard.setAttribute('data-tags', course.tags.join(' '));
+      
+      // Create course card HTML
+      let cardHTML = `${course.code}`;
+      
+      // Add units if present
+      if (course.units) {
+        cardHTML += ` <span class="units">(${course.units})</span>`;
+      }
+      
+      // Add tags
+      cardHTML += course.tags.map(tag => `<span class="tag">${tag}</span>`).join('');
+      
+      // Add tooltip with additional info
+      let tooltipContent = `${course.name}`;
+      if (course.prerequisites && course.prerequisites.length > 0) {
+        tooltipContent += `\nPrerequisites: ${course.prerequisites.join(', ')}`;
+      }
+      if (course.additionalNotes) {
+        tooltipContent += `\nNote: ${course.additionalNotes}`;
+      }
+      
+      courseCard.setAttribute('title', tooltipContent);
+      courseCard.innerHTML = cardHTML;
+      
+      // Add the course card to the drop zone
+      dropZone.appendChild(courseCard);
+      
+      // Setup drag events for the new card
+      setupCardDragEvents(courseCard);
+    });
+  });
+}
+
+// Handle sending a message to the AI
+async function handleSendMessage() {
+  const aiInput = document.getElementById('aiInput');
+  const aiMessage = document.getElementById('aiMessage');
+  
+  const message = aiInput.value.trim();
+  if (!message) return;
+  
+  // Add the user message to the chat
+  addMessage(message, true);
+  
+  // Clear the input
+  aiInput.value = '';
+  
+  // Add loading message
+  const loadingMsg = document.createElement('p');
+  loadingMsg.textContent = "Working on it...";
+  loadingMsg.id = "loading-message";
+  aiMessage.appendChild(loadingMsg);
+  
+  try {
+    // Process the message
+    const result = await processUserMessage(message);
+    
+    // Remove loading message
+    const loadingElement = document.getElementById('loading-message');
+    if (loadingElement) {
+      loadingElement.remove();
+    }
+    
+    // Add the AI response
+    addMessage(result.response);
+    
+    // Apply the plan to the UI if there is one
+    if (result.plan) {
+      applyPlanToUI(result.plan);
+      addMessage("✅ Plan generated successfully! You can now drag and drop courses to make adjustments.");
+    }
+    
+    // Handle constraint updates
+    if (result.action === "updateConstraints") {
+      // If we already have a plan displayed, regenerate it with new constraints
+      const lastPlanCommand = localStorage.getItem('lastPlanCommand');
+      if (lastPlanCommand) {
+        addMessage("Updating your plan with the new constraints...");
+        const updateResult = await processUserMessage(lastPlanCommand);
+        if (updateResult.plan) {
+          applyPlanToUI(updateResult.plan);
+          addMessage("✅ Plan updated successfully!");
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error processing message:", error);
+    
+    // Remove loading message
+    const loadingElement = document.getElementById('loading-message');
+    if (loadingElement) {
+      loadingElement.remove();
+    }
+    
+    addMessage(`Error: ${error.message}. Please try again.`);
+  }
+}
+
+// Function to add a message to the AI chat
+function addMessage(message, isUser = false) {
+  const aiMessage = document.getElementById('aiMessage');
+  const messageElem = document.createElement('p');
+  messageElem.textContent = message;
+  if (isUser) {
+    messageElem.classList.add('user-message');
+    
+    // Store this command if it's a plan command
+    if (message.toLowerCase().startsWith('plan')) {
+      localStorage.setItem('lastPlanCommand', message);
+    }
+  }
+  aiMessage.appendChild(messageElem);
+  aiMessage.scrollTop = aiMessage.scrollHeight;
+}
+
+// On page load, set up the UI and initialize backend
+document.addEventListener('DOMContentLoaded', async () => {
   const courseList = document.getElementById("courseList");
   const semesterColumns = document.querySelectorAll(".semester-column");
   const filterButtons = document.querySelectorAll(".filter-btn");
+  const aiSend = document.getElementById('aiSend');
+  const aiInput = document.getElementById('aiInput');
 
-  // Initialize drag events for all initial course cards
+  // Initialize drag events for course cards
   const courseCards = Array.from(courseList ? courseList.children : []);
   courseCards.forEach(setupCardDragEvents);
 
-  // Make the sidebar a drop target
+  // Set up drop targets
   if (courseList) {
     courseList.addEventListener("dragover", handleDragOver);
     courseList.addEventListener("dragleave", handleDragLeave);
     courseList.addEventListener("drop", handleDrop);
   }
 
-  // === Semester Column Drop Targets ===
   semesterColumns.forEach(column => {
     const dropZone = column.querySelector('.course-drop-zone');
     if (dropZone) {
@@ -225,18 +585,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Update course cards for filtering
-  function updateCourseCards() {
-    const cards = document.querySelectorAll('.course-card');
-    cards.forEach(setupCardDragEvents);
-  }
-
-  // === Filter Buttons ===
+  // Set up filter buttons
   filterButtons.forEach(btn => {
     btn.addEventListener("click", () => {
-      // Remove active class from all buttons
       filterButtons.forEach(b => b.classList.remove('active'));
-      // Add active class to clicked button
       btn.classList.add('active');
       
       const tag = btn.getAttribute("data-filter");
@@ -251,289 +603,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
       
-      // Store the active filter
       localStorage.setItem('activeFilter', tag);
     });
     
-    // Initialize active state from localStorage
     if (btn.getAttribute('data-filter') === 'all') {
       btn.classList.add('active');
     }
   });
   
-  // Apply stored filter on page load
+  // Restore active filter
   const activeFilter = localStorage.getItem('activeFilter');
   if (activeFilter) {
     const btn = document.querySelector(`.filter-btn[data-filter="${activeFilter}"]`);
-    if (btn) {
-      btn.click(); // Trigger the click to apply the filter
-    }
-  }
-
-  // AI Advisor Interaction
-  const aiInput = document.getElementById('aiInput');
-  const aiSend = document.getElementById('aiSend');
-  const aiMessage = document.getElementById('aiMessage');
-  
-  // Function to add a message to the AI chat
-  function addMessage(message, isUser = false) {
-    const messageElem = document.createElement('p');
-    messageElem.textContent = message;
-    if (isUser) {
-      messageElem.classList.add('user-message');
-    }
-    aiMessage.appendChild(messageElem);
-    aiMessage.scrollTop = aiMessage.scrollHeight;
+    if (btn) btn.click();
   }
   
-  // Function to apply a plan to the UI
-  function applyPlanToUI(planKey) {
-    // Get the plan data
-    const plan = demoPlans[planKey];
-    if (!plan) {
-      console.error(`Plan not found for key: ${planKey}`);
-      addMessage("Error: Could not generate a plan. Please try again.");
-      return;
-    }
-    
-    currentPlan = planKey;
-    
-    // Clear existing courses from all semester columns
-    document.querySelectorAll('.course-drop-zone').forEach(zone => {
-      zone.innerHTML = '';
-    });
-    
-    // Add courses to each semester column
-    Object.entries(plan).forEach(([termId, courses]) => {
-      // Skip summer terms if avoiding summer
-      if (currentConstraints.avoidSummer && termId.includes('summer')) {
-        return;
-      }
-      
-      const column = document.getElementById(termId);
-      if (!column) {
-        console.warn(`Term column ${termId} not found`);
-        return;
-      }
-      
-      const dropZone = column.querySelector('.course-drop-zone');
-      if (!dropZone) {
-        console.warn(`Drop zone in ${termId} not found`);
-        return;
-      }
-      
-      // Limit courses to respect max units
-      let termUnits = 0;
-      const coursesToAdd = [];
-      
-      for (const course of courses) {
-        if (termUnits + course.units <= currentConstraints.maxUnits) {
-          coursesToAdd.push(course);
-          termUnits += course.units;
-        } else {
-          // Find the next non-summer term to place this course
-          const allTermIds = Object.keys(plan);
-          let nextTermIndex = allTermIds.indexOf(termId) + 1;
-          
-          while (nextTermIndex < allTermIds.length) {
-            const nextTermId = allTermIds[nextTermIndex];
-            
-            // Skip summer terms if avoiding summer
-            if (currentConstraints.avoidSummer && nextTermId.includes('summer')) {
-              nextTermIndex++;
-              continue;
-            }
-            
-            // Add to this term
-            const nextColumn = document.getElementById(nextTermId);
-            if (nextColumn) {
-              const nextDropZone = nextColumn.querySelector('.course-drop-zone');
-              if (nextDropZone) {
-                // Create a card for this term
-                createCourseCard(course, nextDropZone);
-                break;
-              }
-            }
-            
-            nextTermIndex++;
-          }
-        }
-      }
-      
-      // Add the approved courses to this term
-      coursesToAdd.forEach(course => {
-        createCourseCard(course, dropZone);
-      });
-    });
-    
-    // Update the success message
-    addMessage("✅ Plan generated successfully! You can now drag and drop courses to make adjustments.");
-  }
-  
-  // Helper to create a course card
-  function createCourseCard(course, dropZone) {
-    const courseCard = document.createElement('div');
-    courseCard.className = 'course-card';
-    courseCard.setAttribute('draggable', 'true');
-    courseCard.setAttribute('data-tags', course.tags.join(' '));
-    
-    // Create course card HTML
-    let cardHTML = `${course.code}`;
-    
-    // Add units if present
-    if (course.units) {
-      cardHTML += ` <span class="units">(${course.units})</span>`;
-    }
-    
-    // Add tags
-    cardHTML += course.tags.map(tag => `<span class="tag">${tag}</span>`).join('');
-    
-    courseCard.innerHTML = cardHTML;
-    
-    // Add the course card to the drop zone
-    dropZone.appendChild(courseCard);
-    
-    // Setup drag events for the new card
-    setupCardDragEvents(courseCard);
-  }
-  
-  // Process user message and generate a response
-  function processUserMessage(message) {
-    message = message.toLowerCase().trim();
-    
-    // Check for plan command: "plan [university] [major]"
-    if (message.startsWith('plan')) {
-      const parts = message.split(' ');
-      if (parts.length >= 3) {
-        const university = parts[1];
-        const major = parts[2];
-        
-        // Map to known plans
-        let planKey = null;
-        
-        if (university === 'berkeley' && (major === 'eecs' || major === 'cs')) {
-          planKey = 'berkeley_eecs';
-          currentTarget.university = 'berkeley';
-          currentTarget.major = 'eecs';
-        } else if (university === 'ucla' && major === 'cs') {
-          planKey = 'ucla_cs';
-          currentTarget.university = 'ucla';
-          currentTarget.major = 'cs';
-        } else if ((university === 'ucsd' && major === 'cognitive') || 
-                  (university === 'ucsd' && major === 'cogsci')) {
-          planKey = 'ucsd_cognitive';
-          currentTarget.university = 'ucsd';
-          currentTarget.major = 'cognitive';
-        }
-        
-        if (planKey) {
-          addMessage(`Generating your optimized transfer plan for ${university.toUpperCase()} ${major.toUpperCase()}...`);
-          
-          // Use setTimeout to simulate processing time
-          setTimeout(() => {
-            applyPlanToUI(planKey);
-          }, 1000);
-          
-          return;
-        } else {
-          return addMessage(`Sorry, I don't have a plan for ${university} ${major} yet. Try "plan berkeley eecs", "plan ucla cs", or "plan ucsd cognitive".`);
-        }
-      } else {
-        return addMessage("Please specify a university and major, for example: plan berkeley eecs");
-      }
-    }
-    
-    // Check for avoid command: "avoid [term]"
-    if (message.startsWith('avoid')) {
-      if (message.includes('summer')) {
-        currentConstraints.avoidSummer = true;
-        addMessage("I'll avoid scheduling classes in summer terms.");
-        
-        // Regenerate the plan if we have one
-        if (currentPlan) {
-          setTimeout(() => {
-            applyPlanToUI(currentPlan);
-          }, 500);
-        }
-        
-        return;
-      } else {
-        return addMessage("I can help you avoid specific terms. Try 'avoid summer' to skip summer terms.");
-      }
-    }
-    
-    // Check for limit command: "limit [units]"
-    if (message.startsWith('limit')) {
-      const parts = message.split(' ');
-      if (parts.length >= 2 && !isNaN(parts[1])) {
-        const unitLimit = parseInt(parts[1]);
-        
-        if (unitLimit >= 8 && unitLimit <= 25) {
-          currentConstraints.maxUnits = unitLimit;
-          addMessage(`Setting your unit limit per term to ${unitLimit}.`);
-          
-          // Regenerate the plan if we have one
-          if (currentPlan) {
-            setTimeout(() => {
-              applyPlanToUI(currentPlan);
-            }, 500);
-          }
-          
-          return;
-        }
-      }
-      
-      return addMessage("Please specify a reasonable unit limit between 8 and 25, for example: limit 18");
-    }
-    
-    // Check for optimize command
-    if (message === 'optimize') {
-      if (!currentPlan) {
-        return addMessage("Please create a plan first using 'plan [university] [major]'");
-      }
-      
-      addMessage("Optimizing your current plan for better balance...");
-      
-      // Just reapply the current plan - in a real implementation this would do more
-      setTimeout(() => {
-        applyPlanToUI(currentPlan);
-      }, 800);
-      
-      return;
-    }
-    
-    // Check for help command
-    if (message === 'help') {
-      return addMessage(
-        "Available commands:\n" +
-        "- plan [university] [major] - Create a transfer plan\n" +
-        "- avoid summer - Avoid scheduling classes in summer\n" +
-        "- limit [units] - Set maximum units per term\n" +
-        "- optimize - Balance workload across terms\n\n" +
-        "Example: plan berkeley eecs"
-      );
-    }
-    
-    // Default response for unknown commands
-    return addMessage("I don't understand that command. Type 'help' to see available commands.");
-  }
-  
-  // Handle sending a message to the AI
-  function handleSendMessage() {
-    const message = aiInput.value.trim();
-    if (!message) return;
-    
-    // Add the user message to the chat
-    addMessage(message, true);
-    
-    // Clear the input
-    aiInput.value = '';
-    
-    // Process the message (client-side only)
-    processUserMessage(message);
-  }
-  
-  // Event listeners for the AI chat
+  // Set up AI chat
   if (aiSend) {
     aiSend.addEventListener('click', handleSendMessage);
   }
@@ -546,15 +631,64 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
-  // Initial greeting from the AI
+  // Add initial greeting
   setTimeout(() => {
     addMessage("Hi! I'm your AI course planning assistant. I'll help you create a transfer plan.");
   }, 500);
   
-  // Add sample commands to demonstrate functionality
+  // Add sample commands
   setTimeout(() => {
-    addMessage("Try these commands:\n- plan berkeley eecs\n- avoid summer\n- limit 18\n- optimize");
+    addMessage("Try these commands:\n- plan berkeley eecs\n- plan berkeley eecs and ucsd cognitive\n- avoid summer\n- limit 18\n- optimize");
+    
+    // Add quick action buttons
+    const quickActions = document.createElement('div');
+    quickActions.className = 'quick-actions';
+    
+    const planButton = document.createElement('button');
+    planButton.textContent = "Plan Berkeley EECS";
+    planButton.addEventListener('click', () => {
+      if (aiInput && aiSend) {
+        aiInput.value = "plan berkeley eecs";
+        aiSend.click();
+      }
+    });
+    
+    const combinedPlanButton = document.createElement('button');
+    combinedPlanButton.textContent = "Berkeley + UCSD Plan";
+    combinedPlanButton.addEventListener('click', () => {
+      if (aiInput && aiSend) {
+        aiInput.value = "plan berkeley eecs and ucsd cognitive";
+        aiSend.click();
+      }
+    });
+    
+    const avoidButton = document.createElement('button');
+    avoidButton.textContent = "Avoid Summer";
+    avoidButton.addEventListener('click', () => {
+      if (aiInput && aiSend) {
+        aiInput.value = "avoid summer";
+        aiSend.click();
+      }
+    });
+    
+    quickActions.appendChild(planButton);
+    quickActions.appendChild(combinedPlanButton);
+    quickActions.appendChild(avoidButton);
+    
+    const aiMessage = document.getElementById('aiMessage');
+    if (aiMessage) {
+      aiMessage.appendChild(quickActions);
+    }
   }, 1000);
+  
+  // Initialize the backend algorithms
+  try {
+    await initializeBackend();
+    console.log("Backend initialized successfully");
+  } catch (error) {
+    console.error("Error initializing backend:", error);
+    addMessage("Error initializing planning algorithms. Please refresh the page.");
+  }
   
   // Add the demo button
   addDemoButton();
@@ -562,7 +696,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Function to initialize a demo plan
 function initializeDemoPlan() {
-  // Simulate typing and sending "plan berkeley eecs"
   const aiInput = document.getElementById('aiInput');
   const aiSend = document.getElementById('aiSend');
   
@@ -584,3 +717,44 @@ function addDemoButton() {
   
   header.appendChild(demoButton);
 }
+
+// Temporary debugging code - remove after fixing the issue
+window.debugShowPlan = function() {
+  const targets = [
+    { universityId: "ucb", majorId: "ucb_eecs" },
+    { universityId: "ucsd", majorId: "ucsd_cognitive_sci" }
+  ];
+  
+  const constraints = {
+    startTerm: "Fall 2024",
+    maxUnitsPerTerm: 20, 
+    minUnitsPerTerm: 10,
+    maxTerms: 8,
+    avoidTerms: ["Summer 2024"],
+    avoidCourses: [],
+    balanceWorkload: false,
+    finishFastest: true 
+  };
+  
+  window.generateRealPlan(targets, constraints)
+    .then(plan => {
+      console.log("Raw plan:", plan);
+      const uiPlan = convertPlanToUI(plan);
+      console.log("UI plan:", uiPlan);
+      applyPlanToUI(uiPlan);
+    })
+    .catch(error => {
+      console.error("Debug plan error:", error);
+    });
+};
+
+// Add a debug button
+const debugButton = document.createElement('button');
+debugButton.textContent = "Debug Show Plan";
+debugButton.style.position = "fixed";
+debugButton.style.bottom = "10px";
+debugButton.style.right = "10px";
+debugButton.style.zIndex = "1000";
+debugButton.addEventListener('click', window.debugShowPlan);
+document.body.appendChild(debugButton);
+

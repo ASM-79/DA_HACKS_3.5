@@ -1077,5 +1077,6 @@ module.exports = {
   generateTermSequence,
   moveCourse,
   addCourse,
-  removeCourse
+  removeCourse,
+  // Include any other exported functions
 };

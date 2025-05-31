@@ -149,7 +149,4 @@ function buildCourseChain(courseCode, courseMap, visited = new Set()) {
   };
 }
 
-module.exports = {
-  buildPrerequisiteChains,
-  buildCourseChain
-};
+module.exports = { buildPrerequisiteChains, buildCourseChain };

@@ -171,7 +171,7 @@ body {
 }
 
 .course-card {
-  background-color: #1e3a8a;
+  background-color: #3b82f6;
   border-radius: 8px;
   padding: 12px 16px;
   margin-bottom: 8px;
@@ -457,8 +457,9 @@ body {
 }
 
 /* AI Chat Styles */
-.user-message {
-  background-color: #e0f2fe;
+.user-message { 
+  background-color: #3b82f6;
+  color: black;
   border-radius: 0.5rem;
   padding: 0.75rem;
   margin: 0.5rem 0;
@@ -495,7 +496,7 @@ body {
 /* User message in chat */
 .user-message {
   background-color: #3b82f6;
-  color: white;
+  color: black;
   border-radius: 0.5rem;
   padding: 0.75rem;
   margin: 0.5rem 0 0.5rem auto;
@@ -530,4 +531,27 @@ body {
   33% { width: 0.5em; }
   66% { width: 1em; }
   100% { width: 1.5em; }
+}
+
+/* Quick action buttons */
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.quick-actions button {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.quick-actions button:hover {
+  background-color: #2563eb;
 }

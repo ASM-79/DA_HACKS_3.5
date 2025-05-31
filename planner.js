@@ -1,6 +1,6 @@
 // planner.js - Main file to execute the planning process
 
-// Import necessary modules and data
+// CommonJS imports
 const sampleDB = require('./sample_db');
 const dbData = require('./db');
 const { buildPrerequisiteChains, buildCourseChain } = require('./build_chains');

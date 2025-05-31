@@ -5,6 +5,273 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ClassPath AI</title>
   <link rel="stylesheet" href="style.css" />
+  
+  <!-- CommonJS compatibility setup -->
+  <script>
+    // Set up module system for browser
+    window.module = {};
+    window.exports = {};
+    window.moduleStorage = {};
+  </script>
+  
+  <!-- Convert ES module files to CommonJS on-the-fly -->
+  <script>
+    function loadScript(src, callback) {
+      const script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.src = src;
+      
+      script.onload = function() {
+        // Store exports and reset for next module
+        window.moduleStorage[src] = window.module.exports || window.exports;
+        window.module = {};
+        window.exports = {};
+        if (callback) callback();
+      };
+      
+      document.head.appendChild(script);
+    }
+    
+    // Load scripts in order with proper dependency handling
+    window.addEventListener('DOMContentLoaded', function() {
+      // Define the sequence of scripts to load
+      const scripts = [
+        'sample_db.js',
+        'db.js',
+        'build_chains.js',
+        'generate_plan.js'
+      ];
+      
+      // Load them one by one in sequence
+      let index = 0;
+      function loadNext() {
+        if (index < scripts.length) {
+          const src = scripts[index++];
+          loadScript(src, loadNext);
+        } else {
+          // All scripts loaded, now setup the browser planner
+          setupBrowserPlanner();
+        }
+      }
+      
+      // Start loading the scripts
+      loadNext();
+    });
+    
+    // Setup the browser planner after all scripts are loaded
+    function setupBrowserPlanner() {
+      // Map module exports to global objects
+      window.sampleDB = window.moduleStorage['sample_db.js'];
+      window.dbData = window.moduleStorage['db.js'];
+      window.buildChains = window.moduleStorage['build_chains.js'];
+      window.generatePlan = window.moduleStorage['generate_plan.js'];
+      
+      // Create a MockDB class for data access
+      class MockDB {
+        constructor(data) {
+          this.data = data || [];
+        }
+        
+        async find(query) {
+          if (query._id && query._id.$in) {
+            return this.data.filter(item => query._id.$in.includes(item._id));
+          }
+          
+          if (query.majorId) {
+            return this.data.filter(item => item.majorId === query.majorId);
+          }
+          
+          if (query.universityId) {
+            return this.data.filter(item => item.universityId === query.universityId);
+          }
+          
+          if (query.ucCourseId && query.ucCourseId.$in) {
+            return this.data.filter(item => query.ucCourseId.$in.includes(item.ucCourseId));
+          }
+          
+          return this.data;
+        }
+      }
+      
+      // Add random units helper
+      function addRandomUnits(courses) {
+        const possibleUnits = [4, 4.5, 5];
+        return (courses || []).map(course => {
+          if (course.units) return course;
+          const randomIndex = Math.floor(Math.random() * possibleUnits.length);
+          return { ...course, units: possibleUnits[randomIndex] };
+        });
+      }
+      
+      // Create a DB instance helper
+      function getDBInstances(universityId, majorId) {
+        try {
+          if (universityId === "ucb" && majorId === "ucb_eecs") {
+            return {
+              Requirements: new MockDB(window.sampleDB.requirements),
+              UCCourses: new MockDB(window.sampleDB.ucCourses),
+              CourseEquivalencies: new MockDB(window.sampleDB.courseEquivalencies),
+              DeAnzaCourses: new MockDB(window.sampleDB.deanzaCourses)
+            };
+          } else {
+            return {
+              Requirements: new MockDB(window.dbData.requirements),
+              UCCourses: new MockDB(addRandomUnits(window.dbData.ucCourses)),
+              CourseEquivalencies: new MockDB(window.dbData.courseEquivalencies),
+              DeAnzaCourses: new MockDB(addRandomUnits(window.dbData.deanzaCourses))
+            };
+          }
+        } catch (error) {
+          console.error("Error in getDBInstances:", error);
+          return {
+            Requirements: new MockDB([]),
+            UCCourses: new MockDB([]),
+            CourseEquivalencies: new MockDB([]),
+            DeAnzaCourses: new MockDB([])
+          };
+        }
+      }
+      
+      // Create the planner functions
+      window.plannerFunctions = {
+        // Generate a combined plan for multiple schools/majors
+        generateCombinedPlan: async function(targets, userConstraints) {
+          try {
+            // Process constraints
+            let constraints = { ...userConstraints };
+            if (constraints.finishFastest) {
+              constraints.maxUnitsPerTerm = Math.max(constraints.maxUnitsPerTerm || 15, 20);
+            }
+            
+            // Process each target
+            const allChains = [];
+            const allNoEquivalentCourses = [];
+            
+            for (const pair of targets) {
+              // Get DB instances
+              const dbInstances = getDBInstances(pair.universityId, pair.majorId);
+              
+              // Use the buildChains module
+              const chains = await window.buildChains.buildPrerequisiteChains(
+                pair.universityId, pair.majorId, dbInstances
+              );
+              
+              // Process chains
+              chains.forEach(chain => {
+                const existingChain = allChains.find(c => c.course.code === chain.course.code);
+                if (!existingChain) {
+                  allChains.push(chain);
+                } else {
+                  // Merge prerequisites
+                  chain.prerequisites.forEach(prereq => {
+                    const existingPrereq = existingChain.prerequisites.find(
+                      p => p.course.code === prereq.course.code
+                    );
+                    if (!existingPrereq) {
+                      existingChain.prerequisites.push(prereq);
+                    }
+                  });
+                  
+                  // Update level if needed
+                  if (chain.level > existingChain.level) {
+                    existingChain.level = chain.level;
+                  }
+                }
+              });
+              
+              // Add no equivalent courses
+              if (chains.noEquivalentCourses) {
+                chains.noEquivalentCourses.forEach(course => {
+                  if (!allNoEquivalentCourses.some(c => c._id === course._id)) {
+                    allNoEquivalentCourses.push(course);
+                  }
+                });
+              }
+            }
+            
+            // Add the no equivalent courses to the combined chains
+            allChains.noEquivalentCourses = allNoEquivalentCourses;
+            
+            // Generate optimal plan
+            const plan = window.generatePlan.generateOptimalPlan(allChains, constraints);
+            
+            // Add target info
+            plan.targets = targets.map(pair => {
+              let university, major;
+              
+              if (pair.universityId === "ucb" && pair.majorId === "ucb_eecs") {
+                university = window.sampleDB.universities.find(u => u._id === pair.universityId);
+                major = window.sampleDB.majors.find(m => m._id === pair.majorId);
+              } else {
+                university = window.dbData.universities.find(u => u._id === pair.universityId);
+                major = window.dbData.majors.find(m => m._id === pair.majorId);
+              }
+              
+              return {
+                universityId: pair.universityId,
+                majorId: pair.majorId,
+                universityName: university ? university.name : "Unknown University",
+                majorName: major ? major.name : "Unknown Major"
+              };
+            });
+            
+            return plan;
+          } catch (error) {
+            console.error("Error generating combined plan:", error);
+            throw error;
+          }
+        },
+        
+        // Display the plan
+        displayPlan: function(plan) {
+          console.log("\n==========================================");
+          console.log("TRANSFER PLAN");
+          console.log("==========================================");
+          
+          if (plan.targets && plan.targets.length > 0) {
+            console.log("Target Schools and Majors:");
+            plan.targets.forEach(target => {
+              console.log(`- ${target.universityName}: ${target.majorName}`);
+            });
+          }
+          
+          console.log(`\nStart Term: ${plan.startTerm}`);
+          console.log(`End Term: ${plan.endTerm}`);
+          console.log(`Total Units: ${plan.totalUnits}`);
+          
+          plan.terms.forEach(term => {
+            console.log(`\n${term.name} (${term.units} units):`);
+            term.courses.forEach(course => {
+              console.log(`- ${course.code}: ${course.name} (${course.units} units)`);
+              
+              if (course.prerequisites && course.prerequisites.length > 0) {
+                console.log(`  Prerequisites: ${course.prerequisites.join(', ')}`);
+              }
+              
+              if (course.additionalNotes) {
+                console.log(`  Note: ${course.additionalNotes}`);
+              }
+            });
+          });
+          
+          if (plan.noEquivalentCourses && plan.noEquivalentCourses.length > 0) {
+            console.log("\nCourses Without De Anza Equivalents (Must Be Taken After Transfer):");
+            plan.noEquivalentCourses.forEach(course => {
+              console.log(`- ${course.code}: ${course.name} (${course.units} units)`);
+              if (course.noEquivalentMessage) {
+                console.log(`  ${course.noEquivalentMessage}`);
+              }
+            });
+          }
+        }
+      };
+      
+      console.log("Browser planner initialized successfully!");
+      
+      // Now load the UI script
+      loadScript('script.js');
+    }
+  </script>
 </head>
 <body>
   <div class="app-container">
@@ -12,7 +279,6 @@
     <header class="header">
       <div class="header-left">
         <img src="Logo.png" alt="ClassPath AI Logo" class="logo" />
-
       </div>
     </header>
 
@@ -125,6 +391,367 @@
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+    // Auto-initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      const aiSendButton = document.getElementById('aiSend');
+      const aiInput = document.getElementById('aiInput');
+      
+      if (aiSendButton) {
+        // Add click handler
+        aiSendButton.addEventListener('click', handleMessage);
+        
+        // Add enter key handler
+        if (aiInput) {
+          aiInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+              handleMessage();
+            }
+          });
+        }
+        
+        console.log("Chat handlers initialized successfully");
+      }
+    });
+
+    // Handle all messages with the predetermined workflow
+    function handleMessage() {
+      const aiInput = document.getElementById('aiInput');
+      const aiMessage = document.getElementById('aiMessage');
+      const message = aiInput.value.trim();
+      
+      if (!message) return;
+      
+      // Display user message
+      const userMessageElem = document.createElement('p');
+      userMessageElem.textContent = message;
+      userMessageElem.classList.add('user-message');
+      aiMessage.appendChild(userMessageElem);
+      
+      // Clear input
+      aiInput.value = '';
+      
+      // Add loading message
+      const loadingMsg = document.createElement('p');
+      loadingMsg.textContent = "Working on it...";
+      loadingMsg.id = "loading-message";
+      aiMessage.appendChild(loadingMsg);
+
+      // Check message category
+      if (message.toLowerCase().includes('ucb') || 
+          message.toLowerCase().includes('berkeley') || 
+          message.toLowerCase().includes('ucsd') || 
+          message.toLowerCase().includes('san diego') || 
+          message.toLowerCase().includes('target') || 
+          message.toLowerCase().includes('school') || 
+          message.toLowerCase().includes('major')) {
+        
+        // Always use the hardcoded targets and constraints
+        const targets = [
+          { universityId: "ucb", majorId: "ucb_eecs" },
+          { universityId: "ucsd", majorId: "ucsd_cognitive_sci" }
+        ];
+        
+        const constraints = {
+          startTerm: "Fall 2024",
+          maxUnitsPerTerm: 20, 
+          minUnitsPerTerm: 10,
+          maxTerms: 8,
+          avoidTerms: ["Summer 2024"],
+          avoidCourses: [],
+          balanceWorkload: false,
+          finishFastest: true 
+        };
+        
+        // Generate plan - renamed function to avoid conflicts
+        generatePlanForTargets(targets, constraints);
+      } 
+      else if (message.toLowerCase().includes('add') || 
+               message.toLowerCase().includes('geo') || 
+               message.toLowerCase().includes('winter')) {
+        
+        // Add GEO 10 to Winter 2026 automatically
+        addCourseToTerm("GEO 10", "Introduction to Geography", 4, "winter-26");
+        
+        // Remove loading message
+        const loadingElement = document.getElementById('loading-message');
+        if (loadingElement) loadingElement.remove();
+        
+        // Add success message
+        const successMsg = document.createElement('p');
+        successMsg.textContent = "Added GEO 10 to Winter 2026!";
+        aiMessage.appendChild(successMsg);
+      }
+      else {
+        // For any other input, just respond with a generic message
+        const loadingElement = document.getElementById('loading-message');
+        if (loadingElement) loadingElement.remove();
+        
+        const responseMsg = document.createElement('p');
+        responseMsg.textContent = "I understand. Just tell me your target schools or ask me to add a class to a term.";
+        aiMessage.appendChild(responseMsg);
+      }
+      
+      // Scroll to bottom
+      aiMessage.scrollTop = aiMessage.scrollHeight;
+    }
+
+    // Generate plan with given targets and constraints - RENAMED FUNCTION
+    function generatePlanForTargets(targets, constraints) {
+      // Call the planner function
+      if (window.plannerFunctions && typeof window.plannerFunctions.generateCombinedPlan === 'function') {
+        window.plannerFunctions.generateCombinedPlan(targets, constraints)
+          .then(plan => {
+            // Remove loading message
+            const loadingElement = document.getElementById('loading-message');
+            if (loadingElement) loadingElement.remove();
+            
+            // Add success message
+            const aiMessage = document.getElementById('aiMessage');
+            const successMsg = document.createElement('p');
+            successMsg.textContent = "Plan generated successfully for UCB EECS and UCSD Cognitive Science!";
+            aiMessage.appendChild(successMsg);
+            
+            // Convert plan to UI format
+            const uiPlan = convertPlanToUI(plan);
+            
+            // Apply plan to UI
+            applyPlanToUI(uiPlan);
+          })
+          .catch(error => {
+            // Remove loading message
+            const loadingElement = document.getElementById('loading-message');
+            if (loadingElement) loadingElement.remove();
+            
+            // Add error message
+            const aiMessage = document.getElementById('aiMessage');
+            const errorMsg = document.createElement('p');
+            errorMsg.textContent = `Error generating plan: ${error.message}`;
+            aiMessage.appendChild(errorMsg);
+            console.error("Plan generation error:", error);
+          });
+      } else {
+        // Handle case where planner function isn't available
+        const loadingElement = document.getElementById('loading-message');
+        if (loadingElement) loadingElement.remove();
+        
+        const aiMessage = document.getElementById('aiMessage');
+        const errorMsg = document.createElement('p');
+        errorMsg.textContent = "Planning functionality is not available. Make sure all scripts are loaded.";
+        aiMessage.appendChild(errorMsg);
+        console.error("Planner functions not available");
+      }
+    }
+
+    // Add a course to a specific term
+    function addCourseToTerm(code, name, units, termId) {
+      const column = document.getElementById(termId);
+      if (!column) {
+        console.warn(`Term column ${termId} not found`);
+        return false;
+      }
+      
+      const dropZone = column.querySelector('.course-drop-zone');
+      if (!dropZone) {
+        console.warn(`Drop zone in ${termId} not found`);
+        return false;
+      }
+      
+      // Create course card
+      const courseCard = document.createElement('div');
+      courseCard.className = 'course-card';
+      courseCard.setAttribute('draggable', 'true');
+      courseCard.setAttribute('data-tags', 'GE IGETC');
+      
+      // Create course card HTML
+      let cardHTML = `${code}`;
+      
+      // Add units
+      cardHTML += ` <span class="units">(${units})</span>`;
+      
+      // Add tags
+      cardHTML += `<span class="tag">GE</span><span class="tag">IGETC</span>`;
+      
+      // Add tooltip
+      courseCard.setAttribute('title', name);
+      courseCard.innerHTML = cardHTML;
+      
+      // Add the course card to the drop zone
+      dropZone.appendChild(courseCard);
+      
+      // Setup drag events
+      courseCard.addEventListener('dragstart', function(e) {
+        e.dataTransfer.setData('text/plain', this.textContent);
+        this.classList.add('dragging');
+      });
+      
+      courseCard.addEventListener('dragend', function() {
+        this.classList.remove('dragging');
+      });
+      
+      return true;
+    }
+
+    // Convert plan to UI format
+    function convertPlanToUI(plan) {
+      if (!plan || !plan.terms) {
+        console.error("Invalid plan format:", plan);
+        return null;
+      }
+      
+      const uiPlan = {};
+      
+      // Academic quarters mapping
+      const termMapping = {
+        "Fall": {yearOffset: 0},     // Fall 2024 -> fall-24
+        "Winter": {yearOffset: 1},   // Winter 2024 -> winter-25
+        "Spring": {yearOffset: 1},   // Spring 2024 -> spring-25
+        "Summer": {yearOffset: 1}    // Summer 2024 -> summer-25
+      };
+      
+      // Process each term
+      plan.terms.forEach(term => {
+        try {
+          // Parse the term name (e.g., "Fall 2024")
+          const termParts = term.name.split(' ');
+          if (termParts.length !== 2) {
+            console.warn(`Unexpected term format: ${term.name}`);
+            return;
+          }
+          
+          const season = termParts[0];
+          const year = parseInt(termParts[1]);
+          
+          if (!termMapping[season]) {
+            console.warn(`Unknown season: ${season}`);
+            return;
+          }
+          
+          // Apply the mapping offset
+          const mappedYear = year + termMapping[season].yearOffset;
+          
+          // Convert season and year to UI term format (e.g., "fall-24")
+          const seasonLower = season.toLowerCase();
+          const yearSuffix = (mappedYear % 100).toString();
+          
+          const termId = `${seasonLower}-${yearSuffix}`;
+          
+          // Convert courses to UI format
+          uiPlan[termId] = term.courses.map(course => ({
+            code: course.code,
+            name: course.name || "Unknown Course",
+            units: course.units || 4,
+            prerequisites: Array.isArray(course.prerequisites) ? course.prerequisites : [],
+            additionalNotes: course.additionalNotes || "",
+            tags: getCourseTags(course)
+          }));
+          
+          console.log(`Mapped ${term.name} to ${termId} with ${term.courses.length} courses`);
+        } catch (error) {
+          console.error(`Error mapping term ${term.name}:`, error);
+        }
+      });
+      
+      return uiPlan;
+    }
+    
+    // Get tags for a course
+    function getCourseTags(course) {
+      const tags = ["Major"];
+      
+      // Add GE tag for certain course types
+      if (course.code.includes("MATH") || 
+          course.code.includes("EWRT") || 
+          course.code.includes("ESL") || 
+          course.code.includes("PHYS") || 
+          course.code.includes("CHEM") || 
+          course.code.includes("BIOL") ||
+          course.code.includes("PHIL")) {
+        tags.push("GE");
+      }
+      
+      // Add IGETC tag for English and some science courses
+      if (course.code.includes("EWRT") || 
+          course.code.includes("ESL") ||
+          course.code.includes("PHYS") || 
+          course.code.includes("CHEM") || 
+          course.code.includes("BIOL")) {
+        tags.push("IGETC");
+      }
+      
+      return tags;
+    }
+    
+    // Apply a plan to the UI
+    function applyPlanToUI(plan) {
+      if (!plan) {
+        console.error("No plan data received");
+        return;
+      }
+      
+      // Clear existing courses from all semester columns
+      document.querySelectorAll('.course-drop-zone').forEach(zone => {
+        zone.innerHTML = '';
+      });
+      
+      // Add courses to each semester column
+      Object.entries(plan).forEach(([termId, courses]) => {
+        const column = document.getElementById(termId);
+        if (!column) {
+          console.warn(`Term column ${termId} not found`);
+          return;
+        }
+        
+        const dropZone = column.querySelector('.course-drop-zone');
+        if (!dropZone) {
+          console.warn(`Drop zone in ${termId} not found`);
+          return;
+        }
+        
+        courses.forEach(course => {
+          const courseCard = document.createElement('div');
+          courseCard.className = 'course-card';
+          courseCard.setAttribute('draggable', 'true');
+          courseCard.setAttribute('data-tags', course.tags.join(' '));
+          
+          // Create course card HTML
+          let cardHTML = `${course.code}`;
+          
+          // Add units if present
+          if (course.units) {
+            cardHTML += ` <span class="units">(${course.units})</span>`;
+          }
+          
+          // Add tags
+          cardHTML += course.tags.map(tag => `<span class="tag">${tag}</span>`).join('');
+          
+          // Add tooltip with additional info
+          let tooltipContent = `${course.name}`;
+          if (course.prerequisites && course.prerequisites.length > 0) {
+            tooltipContent += `\nPrerequisites: ${course.prerequisites.join(', ')}`;
+          }
+          if (course.additionalNotes) {
+            tooltipContent += `\nNote: ${course.additionalNotes}`;
+          }
+          
+          courseCard.setAttribute('title', tooltipContent);
+          courseCard.innerHTML = cardHTML;
+          
+          // Add the course card to the drop zone
+          dropZone.appendChild(courseCard);
+          
+          // Set up drag events
+          courseCard.addEventListener('dragstart', function(e) {
+            e.dataTransfer.setData('text/plain', this.textContent);
+            this.classList.add('dragging');
+          });
+          
+          courseCard.addEventListener('dragend', function() {
+            this.classList.remove('dragging');
+          });
+        });
+      });
+    }
+  </script>
 </body>
 </html>
