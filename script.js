@@ -671,9 +671,50 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
     
+    // Add more quick action buttons
+    const uclaButton = document.createElement('button');
+    uclaButton.textContent = "UCLA CS Plan";
+    uclaButton.addEventListener('click', () => {
+      if (aiInput && aiSend) {
+        aiInput.value = "plan ucla cs";
+        aiSend.click();
+      }
+    });
+
+    const sjsuButton = document.createElement('button');
+    sjsuButton.textContent = "SJSU Software Eng";
+    sjsuButton.addEventListener('click', () => {
+      if (aiInput && aiSend) {
+        aiInput.value = "plan sjsu software";
+        aiSend.click();
+      }
+    });
+
+    const limitButton = document.createElement('button');
+    limitButton.textContent = "Set 15 Unit Limit";
+    limitButton.addEventListener('click', () => {
+      if (aiInput && aiSend) {
+        aiInput.value = "limit 15";
+        aiSend.click();
+      }
+    });
+
+    const optimizeButton = document.createElement('button');
+    optimizeButton.textContent = "Optimize Plan";
+    optimizeButton.addEventListener('click', () => {
+      if (aiInput && aiSend) {
+        aiInput.value = "optimize";
+        aiSend.click();
+      }
+    });
+    
     quickActions.appendChild(planButton);
     quickActions.appendChild(combinedPlanButton);
     quickActions.appendChild(avoidButton);
+    quickActions.appendChild(uclaButton);
+    quickActions.appendChild(sjsuButton);
+    quickActions.appendChild(limitButton);
+    quickActions.appendChild(optimizeButton);
     
     const aiMessage = document.getElementById('aiMessage');
     if (aiMessage) {
