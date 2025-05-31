@@ -1,0 +1,40 @@
+version: "3.1"
+
+nlu:
+- intent: greet
+  examples: |
+    - hey
+    - hello
+    - hi
+    - hello there
+    - good morning
+    - good evening
+
+- intent: goodbye
+  examples: |
+    - bye
+    - goodbye
+    - see you around
+    - see you later
+
+- intent: generate_plan
+  examples: |
+    - I want to create a transfer plan
+    - generate a plan for [UC Berkeley](university) in [Computer Science](major)
+    - make a transfer plan to [Stanford](university) for [Data Science](major)
+    - I need a plan to transfer to [UCLA](university) for [Business](major)
+    - create a plan for [UC Davis](university) in [Engineering](major)
+
+- intent: modify_plan
+  examples: |
+    - move [CIS 22A](course) to [Spring 2024](term)
+    - change [MATH 1A](course) to [Fall 2024](term)
+    - update my plan to move [PHYS 4A](course) to [Winter 2024](term)
+    - shift [CIS 22B](course) to [Summer 2024](term)
+
+- intent: inform
+  examples: |
+    - I want to transfer to [UC Berkeley](university)
+    - my major is [Computer Science](major)
+    - I'm taking [CIS 22A](course)
+    - I want to take it in [Spring 2024](term) 

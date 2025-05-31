@@ -1,0 +1,59 @@
+version: "3.1"
+
+intents:
+  - greet
+  - goodbye
+  - generate_plan
+  - modify_plan
+  - inform
+
+entities:
+  - university
+  - major
+  - course
+  - term
+
+slots:
+  university:
+    type: text
+    mappings:
+    - type: from_entity
+      entity: university
+  major:
+    type: text
+    mappings:
+    - type: from_entity
+      entity: major
+  course:
+    type: text
+    mappings:
+    - type: from_entity
+      entity: course
+  term:
+    type: text
+    mappings:
+    - type: from_entity
+      entity: term
+
+responses:
+  utter_greet:
+    - text: "Hello! I can help you create or modify your transfer plan. What would you like to do?"
+
+  utter_goodbye:
+    - text: "Goodbye! Good luck with your transfer planning!"
+
+  utter_ask_university:
+    - text: "Which university would you like to transfer to?"
+
+  utter_ask_major:
+    - text: "What major are you interested in?"
+
+  utter_ask_course:
+    - text: "Which course would you like to modify?"
+
+  utter_ask_term:
+    - text: "Which term would you like to move the course to?"
+
+actions:
+  - action_process_plan
+  - action_modify_plan 
