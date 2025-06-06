@@ -1,0 +1,45 @@
+California State University, Maritime Academy : https://assist.org/transfer/results?year=75&institution=113&agreement=1&agreementType=to&viewAgreementsOptions=true&view=agreement
+University of California, San Diego : https://assist.org/transfer/results?year=75&institution=113&agreement=7&agreementType=to&viewAgreementsOptions=true&view=agreement
+California Polytechnic University, San Luis Obispo : https://assist.org/transfer/results?year=75&institution=113&agreement=11&agreementType=to&viewAgreementsOptions=true&view=agreement
+California State University, Monterey Bay : https://assist.org/transfer/results?year=75&institution=113&agreement=12&agreementType=to&viewAgreementsOptions=true&view=agreement
+California State University, East Bay : https://assist.org/transfer/results?year=75&institution=113&agreement=21&agreementType=to&viewAgreementsOptions=true&view=agreement
+California State University, San Marcos : https://assist.org/transfer/results?year=75&institution=113&agreement=23&agreementType=to&viewAgreementsOptions=true&view=agreement
+California State University, Stanislaus : https://assist.org/transfer/results?year=75&institution=113&agreement=24&agreementType=to&viewAgreementsOptions=true&view=agreement
+San Diego State University : https://assist.org/transfer/results?year=75&institution=113&agreement=26&agreementType=to&viewAgreementsOptions=true&view=agreement
+California State University, Fresno : https://assist.org/transfer/results?year=75&institution=113&agreement=29&agreementType=to&viewAgreementsOptions=true&view=agreement
+San Jose State University : https://assist.org/transfer/results?year=75&institution=113&agreement=39&agreementType=to&viewAgreementsOptions=true&view=agreement
+California State University, Northridge : https://assist.org/transfer/results?year=75&institution=113&agreement=42&agreementType=to&viewAgreementsOptions=true&view=agreement
+University of California, Riverside : https://assist.org/transfer/results?year=75&institution=113&agreement=46&agreementType=to&viewAgreementsOptions=true&view=agreement
+California State University, Dominguez Hills : https://assist.org/transfer/results?year=75&institution=113&agreement=50&agreementType=to&viewAgreementsOptions=true&view=agreement
+California State University, Sacramento : https://assist.org/transfer/results?year=75&institution=113&agreement=60&agreementType=to&viewAgreementsOptions=true&view=agreement
+California Polytechnic University, Pomona : https://assist.org/transfer/results?year=75&institution=113&agreement=75&agreementType=to&viewAgreementsOptions=true&view=agreement
+California State University, Los Angeles : https://assist.org/transfer/results?year=75&institution=113&agreement=76&agreementType=to&viewAgreementsOptions=true&view=agreement
+University of California, Berkeley : https://assist.org/transfer/results?year=75&institution=113&agreement=79&agreementType=to&viewAgreementsOptions=true&view=agreement
+California State University, Long Beach : https://assist.org/transfer/results?year=75&institution=113&agreement=81&agreementType=to&viewAgreementsOptions=true&view=agreement
+California State University, San Bernardino : https://assist.org/transfer/results?year=75&institution=113&agreement=85&agreementType=to&viewAgreementsOptions=true&view=agreement
+Sonoma State University : https://assist.org/transfer/results?year=75&institution=113&agreement=88&agreementType=to&viewAgreementsOptions=true&view=agreement
+University of California, Davis : https://assist.org/transfer/results?year=75&institution=113&agreement=89&agreementType=to&viewAgreementsOptions=true&view=agreement
+California State University, Bakersfield : https://assist.org/transfer/results?year=75&institution=113&agreement=98&agreementType=to&viewAgreementsOptions=true&view=agreement
+California Polytechnic University, Humboldt : https://assist.org/transfer/results?year=75&institution=113&agreement=115&agreementType=to&viewAgreementsOptions=true&view=agreement
+San Francisco State University : https://assist.org/transfer/results?year=75&institution=113&agreement=116&agreementType=to&viewAgreementsOptions=true&view=agreement
+University of California, Los Angeles : https://assist.org/transfer/results?year=75&institution=113&agreement=117&agreementType=to&viewAgreementsOptions=true&view=agreement
+University of California, Irvine : https://assist.org/transfer/results?year=75&institution=113&agreement=120&agreementType=to&viewAgreementsOptions=true&view=agreement
+University of California, Santa Barbara : https://assist.org/transfer/results?year=75&institution=113&agreement=128&agreementType=to&viewAgreementsOptions=true&view=agreement
+California State University, Fullerton : https://assist.org/transfer/results?year=75&institution=113&agreement=129&agreementType=to&viewAgreementsOptions=true&view=agreement
+University of California, Santa Cruz : https://assist.org/transfer/results?year=75&institution=113&agreement=132&agreementType=to&viewAgreementsOptions=true&view=agreement
+California State University, Chico : https://assist.org/transfer/results?year=75&institution=113&agreement=141&agreementType=to&viewAgreementsOptions=true&view=agreement
+California State University, Channel Islands : https://assist.org/transfer/results?year=75&institution=113&agreement=143&agreementType=to&viewAgreementsOptions=true&view=agreement
+University of California, Merced : https://assist.org/transfer/results?year=75&institution=113&agreement=144&agreementType=to&viewAgreementsOptions=true&view=agreement
+Loyola Marymount University : https://assist.org/transfer/results?year=75&institution=113&agreement=209&agreementType=to&viewAgreementsOptions=true&view=agreement
+Dominican University of California : https://assist.org/transfer/results?year=75&institution=113&agreement=211&agreementType=to&viewAgreementsOptions=true&view=agreement
+Touro University Worldwide : https://assist.org/transfer/results?year=75&institution=113&agreement=215&agreementType=to&viewAgreementsOptions=true&view=agreement
+Menlo College : https://assist.org/transfer/results?year=75&institution=113&agreement=216&agreementType=to&viewAgreementsOptions=true&view=agreement
+University of the Pacific : https://assist.org/transfer/results?year=75&institution=113&agreement=217&agreementType=to&viewAgreementsOptions=true&view=agreement
+Palo Alto University : https://assist.org/transfer/results?year=75&institution=113&agreement=222&agreementType=to&viewAgreementsOptions=true&view=agreement
+Santa Clara University : https://assist.org/transfer/results?year=75&institution=113&agreement=227&agreementType=to&viewAgreementsOptions=true&view=agreement
+Simpson University : https://assist.org/transfer/results?year=75&institution=113&agreement=228&agreementType=to&viewAgreementsOptions=true&view=agreement
+
+
+CSU Hayward = CSU EastBay
+California Maritime Academy = CSU Maritime Academy
+Humboldt SU = CPU Humboldt
